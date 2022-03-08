@@ -1,4 +1,3 @@
-if (process.env.NODE_ENV != 'production') require('dotenv').config();
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const { Feed } = require('./rss');
 const { token, guildId, channelId } = process.env;
@@ -28,7 +27,7 @@ const game = new Game();
 const sourceList = [];
 
 async function tweetnick(nick) {
-  await userClient.v1.tweet(nick);
+  await userClient.v1.tweet(nick.name);
 }
 
 async function bootFeeds() {
@@ -55,6 +54,7 @@ async function nickgen() {
       }
     }
     guild.me.setNickname(nick.name);
+    tweetnick(nick);
     setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)));
   } catch (err) {
     console.log(`${new Date().toLocaleString()} - ${err}`);
@@ -76,10 +76,9 @@ async function broadcast() {
           channel.send(source.currentEp.link);
         } else {
           embed.setTitle(source.currentEp.title);
-          embed.setURL(source.currentEp.link);
-          if (source.url.includes('patreon')) {
-            embed.setURL(source.currentEp.enclosure.url);
-          }
+          source.url.includes('patreon')
+            ? embed.setURL(source.currentEp.enclosure.url)
+            : embed.setURL(source.currentEp.link);
           embed.setThumbnail(source.image);
           embed.setDescription(sanitise(source.currentEp.contentSnippet));
           channel.send({ embeds: [embed] });

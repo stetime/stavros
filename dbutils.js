@@ -14,9 +14,7 @@ db.once('open', () => {
 
 async function addFeed(url) {
   const feed = await parser.parseURL(url);
-  const image = feed.image
-    ? feed.image.url
-    : 'https://thestandnyc.com/images/comedians/_square/adam.jpg';
+  const image = feed.image ? feed.image.url : '';
   if (feed.title) {
     await new Source({
       url: url,
