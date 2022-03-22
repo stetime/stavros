@@ -1,5 +1,5 @@
 # stavros
-A Discord bot for RSS/Atom feed announcements. Featuring some other fun stuff. Built with NodeJS & MongoDB.
+A Discord bot with RSS/Atom feed announcements. Featuring some other fun stuff. Built with NodeJS & MongoDB.
 
 ## Setup
 deployCommands.js registers all of the bot's commands with discord.
