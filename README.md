@@ -5,8 +5,7 @@ A Discord bot for RSS/Atom feed announcements. Featuring some other fun stuff. B
 deployCommands.js registers all of the bot's commands with discord.
 
 ## Environment Variables
-connectionString - mongoDB connection string.
-
+- connectionString - mongoDB connection string.
 - token - discord client token.
 - clientId = discord client id.
 - guildId = id for the guild containing the server you want to announce in.
