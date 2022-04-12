@@ -3,14 +3,18 @@ const Parser = require('rss-parser');
 const parser = new Parser();
 
 class Feed {
-  constructor() {
-    this.url = '';
+  constructor(id, title, url, currentGuid, image) {
+    this.id = id;
+    this.title = title;
+    this.url = url;
+    this.currentGuid = currentGuid;
+    this.image = image;
   }
 
   async update() {
     const parsed = await parser.parseURL(this.url);
     const latest = parsed.items[0];
-    const guid = this.url.includes('youtube') ? latest.id : latest.guid;
+    const guid = latest.guid || latest.id;
     if (!this.currentGuid) {
       this.currentGuid = guid;
       await Source.findByIdAndUpdate(this.id, {
@@ -26,7 +30,7 @@ class Feed {
       this.currentEp = latest;
       return true;
     } else {
-      return false;
+      return;
     }
   }
 }
