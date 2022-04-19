@@ -64,7 +64,6 @@ async function nickgen() {
       logger.info(`generated nick "${nick.name}" is over discord limit. `);
       await nick.generator();
       if (nick.name.length <= 32) {
-        logger.debug(`regenerating nick: ${nick.name}`);
         break;
       }
     }
@@ -88,6 +87,9 @@ async function broadcast() {
   for (source of sourceList) {
     try {
       if (await source.update()) {
+        logger.info(
+          `source update: ${source.title}: ${source.currentEp.title}`
+        );
         const channel = client.channels.cache.get(channelId);
         if (source.url.includes('youtube')) {
           channel.send(source.currentEp.link);

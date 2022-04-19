@@ -20,7 +20,7 @@ class Feed {
       await Source.findByIdAndUpdate(this.id, {
         currentGuid: this.currentGuid,
       });
-      this.currentEp = guid;
+      this.currentEp = latest;
       return true;
     } else {
       return;
