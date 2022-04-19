@@ -4,3 +4,4 @@ plan.md
 seeds
 .DS_Store
 .local_env
+error.log
