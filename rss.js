@@ -15,19 +15,12 @@ class Feed {
     const parsed = await parser.parseURL(this.url);
     const latest = parsed.items[0];
     const guid = latest.guid || latest.id;
-    if (!this.currentGuid) {
+    if (!this.currentGuid || this.currentGuid !== guid) {
       this.currentGuid = guid;
       await Source.findByIdAndUpdate(this.id, {
         currentGuid: this.currentGuid,
       });
-      this.currentEp = latest;
-      return true;
-    } else if (this.currentGuid !== guid) {
-      this.currentGuid = guid;
-      await Source.findByIdAndUpdate(this.id, {
-        currentGuid: this.currentGuid,
-      });
-      this.currentEp = latest;
+      this.currentEp = guid;
       return true;
     } else {
       return;
