@@ -1,4 +1,5 @@
-require('dotenv').config({ path: `./.local_env` });
+process.env.NODE_ENV !== 'production' &&
+  require('dotenv').config({ path: `./.local_env` });
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const { Feed } = require('./rss');
 const { token, guildId, channelId } = process.env;
@@ -13,6 +14,21 @@ const userClient = new TwitterApi(
   ({ appKey, appSecret, accessToken, accessSecret } = process.env)
 );
 
+const { transports, createLogger, format } = require('winston');
+const logger = createLogger({
+  level: 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.splat(),
+    format.simple(),
+    format.json()
+  ),
+  transports: [
+    new transports.Console(),
+    new transports.File({ filename: 'error.log', level: 'error' }),
+  ],
+});
+
 const mongoose = require('mongoose');
 const { connectionString } = process.env;
 mongoose.connect(connectionString);
@@ -20,7 +36,7 @@ const db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'connection error'));
 db.once('open', () => {
-  console.log('database connected');
+  logger.info('database connected');
 });
 
 const nick = new Nick();
@@ -37,7 +53,6 @@ async function bootFeeds() {
     let { id, title, url, currentGuid, image } = source;
     const feed = new Feed(id, title, url, currentGuid, image);
     sourceList.push(feed);
-    console.log(sourceList);
   });
 }
 
@@ -46,22 +61,26 @@ async function nickgen() {
     const guild = client.guilds.cache.get(guildId);
     await nick.generator();
     while (nick.name.length > 32) {
+      logger.info(`generated nick "${nick.name}" is over discord limit. `);
       await nick.generator();
       if (nick.name.length <= 32) {
+        logger.debug(`regenerating nick: ${nick.name}`);
         break;
       }
     }
     guild.me.setNickname(nick.name);
+    logger.debug(`generated nick: ${nick.name}`);
     process.env.NODE_ENV === 'production' && tweetnick(nick);
     setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)));
   } catch (err) {
-    console.log(`${new Date().toLocaleString()} - ${err}`);
+    logger.error(`${err}`);
   }
 }
 
 async function gamegen() {
   const gen = await game.generator();
   client.user.setActivity(gen, { type: 'PLAYING' });
+  logger.debug(`generated game: ${gen}`);
   setTimeout(gamegen, randomTime(hourToMs(2), hourToMs(5)));
 }
 
@@ -81,13 +100,13 @@ async function broadcast() {
         }
       }
     } catch (err) {
-      console.log(`${new Date().toLocaleString()} : ${err}`);
+      logger.error(err);
     }
   }
 }
 
 client.on('ready', async () => {
-  console.log(`${new Date().toLocaleString()} - connected to discord`);
+  logger.info('connected to discord');
   await bootFeeds();
   setInterval(broadcast, hourToMs(2));
   nickgen();
