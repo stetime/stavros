@@ -1,4 +1,5 @@
-if (process.env.NODE_ENV != 'production') require('dotenv').config();
+process.env.NODE_ENV !== 'production' &&
+  require('dotenv').config({ path: `./.local_env` });
 const { connectionString } = process.env;
 const mongoose = require('mongoose');
 mongoose.connect(connectionString);

@@ -13,22 +13,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const userClient = new TwitterApi(
   ({ appKey, appSecret, accessToken, accessSecret } = process.env)
 );
-
-const { transports, createLogger, format } = require('winston');
-const logger = createLogger({
-  level: 'debug',
-  format: format.combine(
-    format.timestamp(),
-    format.splat(),
-    format.simple(),
-    format.json()
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'error.log', level: 'error' }),
-  ],
-});
-
+const { logger } = require('./logger');
 const mongoose = require('mongoose');
 const { connectionString } = process.env;
 mongoose.connect(connectionString);
@@ -72,7 +57,7 @@ async function nickgen() {
     process.env.NODE_ENV === 'production' && tweetnick(nick);
     setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)));
   } catch (err) {
-    logger.error(`${err}`);
+    logger.error(err);
   }
 }
 
@@ -98,6 +83,7 @@ async function broadcast() {
           embed.setURL(source.currentEp.enclosure.url || source.currentEp.link);
           embed.setThumbnail(source.image);
           embed.setDescription(sanitise(source.currentEp.contentSnippet));
+          embed.setAuthor({ name: source.title });
           channel.send({ embeds: [embed] });
         }
       }
@@ -110,9 +96,11 @@ async function broadcast() {
 client.on('ready', async () => {
   logger.info('connected to discord');
   await bootFeeds();
-  setInterval(broadcast, hourToMs(2));
+  const interval = process.env.NODE_ENV === 'production' ? 4 : 0.2;
+  setInterval(broadcast, hourToMs(interval));
   nickgen();
   gamegen();
+  logger.debug(sourceList);
 });
 
 client.on('interactionCreate', async (interaction) => {
