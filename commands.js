@@ -37,15 +37,15 @@ const addGame = async function (game) {
 };
 
 const addFeed = async function (url) {
-  if (await Source.findOne({ url: url })) {
-    console.log(`dupe source: ${url}`);
-    return false;
-  }
-  const f = new Feed({
-    url: url.toString(),
-  });
-  await f.save();
-  return true;
+  // if (await Source.findOne({ url: url })) {
+  //   console.log(`dupe source: ${url}`);
+  //   return false;
+  // }
+  // const f = new Feed({
+  //   url: url.toString(),
+  // });
+  // await f.save();
+  return url.toString();
 };
 
 module.exports = {
