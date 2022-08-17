@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: './.local_env' });
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -23,12 +23,12 @@ const commands = [
     .addStringOption((el) =>
       el.setName('input').setDescription('enter a game').setRequired(true)
     ),
-  // new SlashCommandBuilder()
-  //   .setName('addfeed')
-  //   .setDescription('add a feed url')
-  //   .addStringOption((el) =>
-  //     el.setName('input').setDescription('enter a feed url').setRequired(true)
-  //   ),
+  new SlashCommandBuilder()
+    .setName('addfeed')
+    .setDescription('add a feed url')
+    .addStringOption((el) =>
+      el.setName('input').setDescription('enter a feed url').setRequired(true)
+    ),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: '9' }).setToken(token);
