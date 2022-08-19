@@ -121,28 +121,33 @@ client.on('interactionCreate', async (interaction) => {
       : await interaction.reply(`the name ${name} already exists in the db`)
   }
   if (commandName === 'addprefix') {
-    const prefix = (await interaction.options.getString('input')(
-      await addPrefix(prefix)
-    ))
+    const prefix = await interaction.options.getString('input')
+    ;(await addPrefix(prefix))
       ? await interaction.reply(`added prefix: ${prefix} to the db`)
       : await interaction.reply(`the prefix ${prefix} already exists`)
   }
   if (commandName === 'addgame') {
-    const game = (await interaction.options.getString('input')(
-      await addGame(game)
-    ))
+    const game = await interaction.options.getString('input')
+    ;(await addGame(game))
       ? await interaction.reply(`added ${game} to the db`)
       : await interaction.reply(`${game} is already in the db`)
   }
   if (commandName === 'addfeed') {
-    const feed = await interaction.options.getString('input')
-    const input = await addFeed(feed)
-    const parsedInput = await inputSingleFeed(input)
-    if (parsedInput) {
-      sourceList.push(parsedInput)
-      await interaction.reply(`added ${parsedInput.title} to the db`)
-    } else {
-      await interaction.reply(`bad feed or dupe.`)
+    try {
+      const feed = await interaction.options.getString('input')
+      const input = await addFeed(feed)
+      const parsedInput = await inputSingleFeed(input)
+      if (parsedInput) {
+        sourceList.push(parsedInput)
+        await interaction.reply(`added ${parsedInput.title} to the db`)
+        logger.info(`added feed url ${parsedInput.title}`)
+        logger.debug(sourceList)
+      } else {
+        await interaction.reply(`bad feed or dupe.`)
+      }
+    } catch (error) {
+      logger.error(error.message)
+      await interaction.reply(`that doesn't work for me brother`)
     }
   }
 })
