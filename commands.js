@@ -1,56 +1,47 @@
-const Games = require('./models/game');
-const Name = require('./models/name');
-const Adjective = require('./models/adjective');
+const Games = require('./models/game')
+const Name = require('./models/name')
+const Adjective = require('./models/adjective')
 
-const addName = async function (nick) {
+async function addName(nick) {
   if (await Name.findOne({ body: nick })) {
-    return;
+    return
   }
   const n = new Name({
     body: nick.toString(),
-  });
-  await n.save();
-  return true;
-};
+  })
+  await n.save()
+  return true
+}
 
-const addPrefix = async function (prefix) {
+async function addPrefix(prefix) {
   if (await Adjective.findOne({ body: prefix })) {
-    return false;
+    return
   }
   const p = new Adjective({
     body: prefix.toString(),
-  });
-  await p.save();
-  return true;
-};
+  })
+  await p.save()
+  return true
+}
 
-const addGame = async function (game) {
+async function addGame(game) {
   if (await Games.findOne({ body: game })) {
-    console.log(`dupe game ${game}`);
-    return false;
+    return
   }
   const g = new Games({
     body: game.toString(),
-  });
-  await g.save();
-  return true;
-};
+  })
+  await g.save()
+  return true
+}
 
-const addFeed = async function (url) {
-  // if (await Source.findOne({ url: url })) {
-  //   console.log(`dupe source: ${url}`);
-  //   return false;
-  // }
-  // const f = new Feed({
-  //   url: url.toString(),
-  // });
-  // await f.save();
-  return url.toString();
-};
+async function addFeed(url) {
+  return url.toString()
+}
 
 module.exports = {
   addGame,
   addFeed,
   addName,
   addPrefix,
-};
+}
