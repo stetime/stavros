@@ -1,7 +1,5 @@
 node_modules
 .env
-plan.md
+*.md
 seeds
 .DS_Store
-.local_env
-*.log
