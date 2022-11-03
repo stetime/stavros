@@ -1,6 +1,9 @@
 const Source = require('./models/sources')
 const Parser = require('rss-parser')
 const parser = new Parser()
+const { maxNewArticles } = require('./utils/config')
+
+const sourceList = []
 
 class Feed {
   constructor(id, title, url, currentGuid, image) {
@@ -19,7 +22,7 @@ class Feed {
       await Source.findByIdAndUpdate(this.id, {
         currentGuid: guid,
       })
-      this.currentEp = parsed.items
+      this.latestPosts = parsed.items
         .slice(
           0,
           parsed.items.findIndex(
@@ -27,7 +30,7 @@ class Feed {
               item.guid === this.currentGuid || item.id === this.currentGuid
           ) || 1
         )
-        .slice(0, 3)
+        .slice(0, maxNewArticles)
       this.currentGuid = guid
       return true
     } else {
@@ -55,4 +58,13 @@ async function inputSingleFeed(url) {
   }
 }
 
-module.exports = { Feed, inputSingleFeed }
+async function bootFeeds() {
+  const sources = await Source.find({})
+  sources.forEach((source) => {
+    let { id, title, url, currentGuid, image } = source
+    const feed = new Feed(id, title, url, currentGuid, image)
+    sourceList.push(feed)
+  })
+}
+
+module.exports = { Feed, inputSingleFeed, bootFeeds, sourceList }
