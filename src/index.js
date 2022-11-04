@@ -55,10 +55,11 @@ async function tweetnick(nick) {
 async function nickgen() {
   try {
     const guild = client.guilds.cache.get(config.guildId)
-    console.log(guild.members.me)
     await nick.generator()
     while (nick.name.length > 32) {
-      logger.debug(`generated nick "${nick.name}" is over discord limit. `)
+      logger.warn(
+        `generated nick "${nick.name}" is over discord character limit. `
+      )
       await nick.generator()
       if (nick.name.length <= 32) {
         break
@@ -94,13 +95,13 @@ async function broadcast() {
           } else {
             const content = sanitise(post.content)
             const embed = new EmbedBuilder()
-            embed.setTitle(post.title)
-            embed.setURL('enclosure' in post ? post.enclosure.url : post.link)
+              .setTitle(post.title)
+              .setURL('enclosure' in post ? post.enclosure.url : post.link)
+              .setDescription(
+                content.length > 300 ? `${content.slice(0, 300)}...` : content
+              )
+              .setAuthor({ name: source.title })
             source.image && embed.setThumbnail(source.image)
-            embed.setDescription(
-              content.length > 300 ? `${content.slice(0, 300)}...` : content
-            )
-            embed.setAuthor({ name: source.title })
             channel.send({ embeds: [embed] })
           }
         }
@@ -117,7 +118,7 @@ client.on(Events.ClientReady, async () => {
   setInterval(broadcast, hourToMs(config.interval))
   nickgen()
   gamegen()
-  logger.info(rss.sourceList)
+  logger.debug(rss.sourceList)
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {

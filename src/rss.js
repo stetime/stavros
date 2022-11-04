@@ -3,7 +3,7 @@ const Parser = require('rss-parser')
 const parser = new Parser()
 const { maxNewArticles } = require('./utils/config')
 
-const sourceList = []
+let sourceList = []
 
 class Feed {
   constructor(id, title, url, currentGuid, image) {
