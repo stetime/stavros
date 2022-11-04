@@ -17,7 +17,7 @@ for (const file of commandFiles) {
 
 const rest = new REST({ version: '10' }).setToken(token)
 
-const piss = async () => {
+;(async () => {
   try {
     console.log(`refreshing ${commands.length} commands`)
     const data = await rest.put(
@@ -28,5 +28,4 @@ const piss = async () => {
   } catch (error) {
     console.error(error)
   }
-}
-piss()
+})()
