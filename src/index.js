@@ -14,11 +14,13 @@ const { Nick, Game } = require('./generators')
 const fs = require('fs')
 const path = require('path')
 const { TwitterApi } = require('twitter-api-v2')
-const twitter = new TwitterApi(
-  config.appKey,
-  config.appSecret,
-  config.accessToken,
-  config.accessSecret
+const twitter = new TwitterApi({
+  appKey: config.appKey,
+  appSecret: config.appSecret,
+  accessToken: config.accessToken,
+  accessSecret: config.accessSecret
+}
+
 )
 const mongoose = require('mongoose')
 mongoose.connect(config.connectionString)
@@ -49,7 +51,11 @@ const nick = new Nick()
 const game = new Game()
 
 async function tweetnick(nick) {
-  await twitter.v1.tweet(nick.name)
+  try {
+    await twitter.v1.tweet(nick.name)
+  } catch (error) {
+    logger.error(error)
+  }
 }
 
 async function nickgen() {
@@ -67,7 +73,8 @@ async function nickgen() {
     }
     guild.members.me.setNickname(nick.name)
     logger.debug(`generated nick: ${nick.name}`)
-    process.env.NODE_ENV === 'production' && tweetnick(nick)
+    // process.env.NODE_ENV === 'production' && tweetnick(nick)
+    tweetnick(nick)
     setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)))
   } catch (err) {
     logger.error(err)
