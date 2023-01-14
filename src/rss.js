@@ -18,6 +18,10 @@ class Feed {
     const parsed = await parser.parseURL(this.url)
     const latest = parsed.items[0]
     const guid = latest.guid || latest.id
+    // check if guid has been seen before in the rare case of a feed deleting posts.
+    if (this.latestPosts && this.latestPosts.filter(post => post.id === guid || post.guid === guid).length > 0) {
+      return
+    }
     if (!this.currentGuid || this.currentGuid !== guid) {
       await Source.findByIdAndUpdate(this.id, {
         currentGuid: guid,

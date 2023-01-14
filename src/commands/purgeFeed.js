@@ -20,13 +20,18 @@ module.exports = {
     const match = sourceList.find((feed) => feed.title === input)
     if (match) {
       await Sources.deleteOne({ title: input })
-      // sourceList = sourceList.filter((feed) => feed.title !== input)
       const index = sourceList.findIndex((feed) => feed.title === input)
       sourceList.splice(index, 1)
       logger.info(`${match.title} has been purged from the db and sourcelist`)
       logger.debug(sourceList)
       await interaction.reply({
-        content: `Unsubscribed from feed ${match.title}`,
+        content: `Unsubscribed from feed ${match.title}`
+      })
+    }
+    else {
+      await interaction.reply({
+        content: `No feed matching ${input}`,
+        ephemeral: true,
       })
     }
   },

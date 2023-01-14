@@ -38,7 +38,7 @@ for (let file of commandFiles) {
   if ('data' in command && 'execute' in command) {
     client.commands.set(command.data.name, command)
   } else {
-    logger.warm(`the command at ${filePath} has no data or execute property`)
+    logger.warn(`the command at ${filePath} has no data or execute property`)
   }
 }
 
@@ -54,7 +54,7 @@ async function tweetnick(nick) {
   try {
     await twitter.v1.tweet(nick.name)
   } catch (error) {
-    logger.error(error)
+    logger.error(error.message)
   }
 }
 
@@ -73,8 +73,7 @@ async function nickgen() {
     }
     guild.members.me.setNickname(nick.name)
     logger.debug(`generated nick: ${nick.name}`)
-    // process.env.NODE_ENV === 'production' && tweetnick(nick)
-    tweetnick(nick)
+    process.env.NODE_ENV === 'production' && tweetnick(nick)
     setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)))
   } catch (err) {
     logger.error(err)
@@ -89,8 +88,9 @@ async function gamegen() {
 }
 
 async function broadcast() {
-  try {
-    for (let source of rss.sourceList) {
+  for (let source of rss.sourceList) {
+    logger.debug(`attempting to update source ${source.title}`)
+    try {
       if (await source.update()) {
         for (let post of source.latestPosts) {
           logger.debug(
@@ -102,10 +102,10 @@ async function broadcast() {
           } else {
             const content = sanitise(post.content)
             const embed = new EmbedBuilder()
-              .setTitle(post.title)
+              .setTitle(post.title || 'Untitled')
               .setURL('enclosure' in post ? post.enclosure.url : post.link)
               .setDescription(
-                content.length > 300 ? `${content.slice(0, 300)}...` : content
+                content.length > 300 ? `${content.slice(0, 300)}...` : content || 'No Description'
               )
               .setAuthor({ name: source.title })
             source.image && embed.setThumbnail(source.image)
@@ -113,10 +113,15 @@ async function broadcast() {
           }
         }
       }
+    } catch (error) {
+      if (error.message.includes('ENOTFOUND') || error.message.includes('404')) {
+        logger.error(`${source.title} is dead, possibly needs removing`)
+      } else {
+        logger.error(`${error.message} while attempting to update ${source.title}`)
+      }
     }
-  } catch (error) {
-    logger.error(error)
-  }
+  } 
+
 }
 
 client.on(Events.ClientReady, async () => {
