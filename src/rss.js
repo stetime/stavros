@@ -2,6 +2,7 @@ const Source = require('./models/sources')
 const Parser = require('rss-parser')
 const parser = new Parser()
 const { maxNewArticles } = require('./utils/config')
+const { logger } = require('./utils/utils')
 
 let sourceList = []
 
@@ -18,8 +19,13 @@ class Feed {
     const parsed = await parser.parseURL(this.url)
     const latest = parsed.items[0]
     const guid = latest.guid || latest.id
-    // check if guid has been seen before in the rare case of a feed deleting posts.
+    // check if guid has been seen recently in the rare case of a feed deleting posts.
     if (this.latestPosts && this.latestPosts.filter(post => post.id === guid || post.guid === guid).length > 0) {
+      return
+    }
+    // check for a title match in the case of youtube livestream behaviour
+    if (this.url.includes('youtube') && this.latestPosts && this.latestPosts.filter(post => post.title === latest.title).length > 0) {
+      logger.debug(`${latest.title} is probably a re-posting of a previously announced youtube live stream`)
       return
     }
     if (!this.currentGuid || this.currentGuid !== guid) {
