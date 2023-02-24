@@ -66,6 +66,8 @@ async function nickgen() {
       logger.warn(
         `generated nick "${nick.name}" is over discord character limit. `
       )
+      const channel = client.channels.cache.get(config.channelId)
+      channel.send(`i tried to change nick to ${nick.name}... but it's over the discord limit...`)
       await nick.generator()
       if (nick.name.length <= 32) {
         break
@@ -100,14 +102,17 @@ async function broadcast() {
           if (source.url.includes('youtube')) {
             channel.send(post.link)
           } else {
-            const content = sanitise(post.content)
+            const content = post.content || post.summary || post.description
             const embed = new EmbedBuilder()
               .setTitle(post.title || 'Untitled')
               .setURL('enclosure' in post ? post.enclosure.url : post.link)
-              .setDescription(
-                content.length > 300 ? `${content.slice(0, 300)}...` : content || 'No Description'
+              .setAuthor({ name: source.title })            
+            if (content) {
+              sanitise(content)
+              embed.setDescription(
+                content.length > 300 ? `${content.slice(0, 300)}...` : content
               )
-              .setAuthor({ name: source.title })
+            }
             source.image && embed.setThumbnail(source.image)
             channel.send({ embeds: [embed] })
           }
