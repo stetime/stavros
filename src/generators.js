@@ -1,38 +1,72 @@
-const Games = require('./models/game')
-const Name = require('./models/name')
-const Adjective = require('./models/adjective')
-const { defaultName, defaultGame } = require('./utils/config')
+import { mongo } from './intergrations/mongo.js'
+import { ActivityType } from 'discord.js'
+import logger from './utils/logger.js'
+import tweet from './intergrations/twitter.js'
+
 
 class Game {
   constructor() {
-    this.name = defaultGame
+    this.name = 'Really Simple Syndication'
   }
   async generator() {
-    const game = await Games.aggregate([{ $sample: { size: 1 } }])
+    const game = await mongo.getGame()
     if (game.length < 1) {
-      return defaultGame
+      return
     }
     this.name = game[0].body
     return this.name
   }
 }
 
+
 class Nick {
   constructor() {
-    this.name = defaultName
+    this.name = 'Stavros'
   }
   async generator() {
-    const adjective = await Adjective.aggregate([{ $sample: { size: 1 } }])
-    const name = await Name.aggregate([{ $sample: { size: 1 } }])
-    if (adjective.length < 1 || name.length < 1) {
-      return 
+    const { prefix, name } = await mongo.getNick()
+    if (prefix.length < 1 || name.length < 1) {
+      return
     }
-    this.name = `${adjective[0].body} ${name[0].body}`
-    return this.name
+    this.name = `${prefix[0].body} ${name[0].body}`
   }
 }
 
-module.exports = {
-  Nick,
-  Game,
+const randomTime = (min, max) => Math.floor(Math.random() * max + min)
+const hours = (hr) => hr * (3600 * 1000)
+
+async function nickgen(client) {
+  try {
+    const nick = new Nick()
+    const guild = client.guilds.cache.get(process.env.guildId)
+    await nick.generator()
+    while (nick.name.length > 32) {
+      logger.warn(
+        `generated nick ${nick.name} is over the discord character limit`
+      )
+      const channel = client.channels.cache.get(process.env.channelId)
+      channel.send(
+        `tried to change nick to ${nick.name}... but it's over the discord limit...`
+      )
+      await nick.generator()
+    }
+    process.env.NODE_ENV === 'production' && tweet(nick.name)
+    guild.members.me.setNickname(nick.name)
+    setTimeout(nickgen, randomTime(hours(5), hours(12)), client)
+  } catch (error) {
+    logger.error(error)
+  }
 }
+
+async function gamegen(client) {
+  try {
+    const game = new Game()
+    const gen = await game.generator()
+    client.user.setActivity(gen, { type: ActivityType.Playing })
+    setTimeout(gamegen, randomTime(hours(5), hours(12)), client)
+  } catch (error) {
+    logger.error(error)
+  }
+}
+
+export { gamegen, nickgen }

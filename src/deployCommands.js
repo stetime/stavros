@@ -1,31 +1,32 @@
-require('dotenv').config({ path: '../.env' })
-const { REST, Routes } = require('discord.js')
-const { clientId, guildId, token } = require('./utils/config')
+import 'dotenv/config'
+import { REST, Routes } from 'discord.js'
+import fs from 'fs'
+const { clientId, guildId, token } = process.env
 
-const fs = require('fs')
 
-const commands = []
-
-const commandFiles = fs
-  .readdirSync('./commands')
-  .filter((file) => file.endsWith('.js'))
+const commands = [];
+const commandsPath = './src/commands'
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+console.log(commandFiles)
 
 for (const file of commandFiles) {
-  const command = require(`./commands/${file}`)
-  commands.push(command.data.toJSON())
+  const { command } = await import(`./commands/${file}`);
+  commands.push(command.data.toJSON());
 }
 
-const rest = new REST({ version: '10' }).setToken(token)
+const rest = new REST({ version: '10' }).setToken(token);
 
-;(async () => {
+(async () => {
   try {
-    console.log(`refreshing ${commands.length} commands`)
+    console.log(`Started refreshing ${commands.length} application (/) commands.`);
+
     const data = await rest.put(
       Routes.applicationGuildCommands(clientId, guildId),
-      { body: commands }
-    )
-    console.log(`successfully reloaded ${data.length} commands`)
+      { body: commands },
+    );
+
+    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
-})()
+})();

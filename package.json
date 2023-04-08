@@ -3,24 +3,24 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development node -r dotenv/config src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon -r dotenv/config ./src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "consola": "^2.15.3",
-    "discord-api-types": "^0.37.16",
-    "discord.js": "^14.6.0",
-    "mongoose": "^6.7.1",
+    "@discordjs/builders": "^1.6.1",
+    "discord.js": "^14.9.0",
+    "mongoose": "^7.0.3",
     "rss-parser": "^3.12.0",
-    "twitter-api-v2": "^1.12.9"
+    "twitter-api-v2": "^1.14.2",
+    "winston": "^3.8.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
-    "eslint": "^8.26.0"
+    "eslint": "^8.38.0",
+    "eslint-plugin-import": "^2.27.5"
   }
 }

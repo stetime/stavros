@@ -1,8 +1,8 @@
-const { SlashCommandBuilder } = require('discord.js')
-const rss = require('../rss')
-const { logger } = require('../utils/utils')
+import logger from '../utils/logger.js'
+import { SlashCommandBuilder } from "discord.js"
+import { inputSingleFeed, sourceList } from '../rss.js'
 
-module.exports = {
+export const command = {
   data: new SlashCommandBuilder()
     .setName('addfeed')
     .setDescription('subscribe to a new RSS/Atom feed')
@@ -14,35 +14,37 @@ module.exports = {
     ),
   async execute(interaction) {
     try {
+      await interaction.deferReply()
       const input = interaction.options.getString('input')
-      const dupe = rss.sourceList.find((feed) => feed.url === input)
+      const dupe = sourceList.find((feed) => feed.url === input)
       if (dupe) {
         logger.debug(`attempt to add dupe feed: ${input}`)
-        await interaction.reply({
+        await interaction.editReply({
           content: `already subscribed to ${dupe.title}`,
           ephemeral: true,
         })
       } else {
-        const newFeed = await rss.inputSingleFeed(input)
-        rss.sourceList.push(newFeed)
+        const newFeed = await inputSingleFeed(input)
+        sourceList.push(newFeed)
         logger.info(`${newFeed.title} - has been added to the db and sourcelist`)
-        logger.debug(rss.sourceList)
-        await interaction.reply({
+        logger.debug(JSON.stringify(sourceList, null, 2))
+        await interaction.editReply({
           content: `Subscribed to feed ${newFeed.title}`,
         })
       }
     } catch (error) {
       if (error.message.includes('ECONNREFUSED')
-        || error.message.includes('40') 
+        || error.message.includes('40')
         || error.message.includes('Unexpected close')) {
-        await interaction.reply('That is not a valid feed.')
+        await interaction.editReply('That is not a valid feed.')
       } else if (error.message.includes('429')) {
-        await interaction.reply('We are currently rate-limited. Try again later.')
+        await interaction.editReply('We are currently rate-limited. Try again later.')
       } else {
-        await interaction.reply('Can\'t do that pal')
+        await interaction.editReply('Can\'t do that pal')
         logger.error(error)
       }
     }
 
   }
 }
+

@@ -1,161 +1,59 @@
-const {
-  Client,
-  GatewayIntentBits,
-  EmbedBuilder,
-  Collection,
-  ActivityType,
-  Events,
-} = require('discord.js')
-const rss = require('./rss')
-const config = require('./utils/config')
-const client = new Client({ intents: [GatewayIntentBits.Guilds] })
-const { randomTime, hourToMs, sanitise, logger } = require('./utils/utils')
-const { Nick, Game } = require('./generators')
-const fs = require('fs')
-const path = require('path')
-const { TwitterApi } = require('twitter-api-v2')
-const twitter = new TwitterApi({
-  appKey: config.appKey,
-  appSecret: config.appSecret,
-  accessToken: config.accessToken,
-  accessSecret: config.accessSecret
-}
+import logger from './utils/logger.js'
+import { Client, GatewayIntentBits, Collection, Events } from 'discord.js'
+import { mongo } from './intergrations/mongo.js'
+import { initFeeds, checkFeeds, purgeFeed } from './rss.js'
+import { gamegen, nickgen } from './generators.js'
+import { readdirSync } from 'fs'
+process.env.NODE_ENV !== 'production' && await import('dotenv/config')
 
-)
-const mongoose = require('mongoose')
-mongoose.connect(config.connectionString)
-const db = mongoose.connection
+const client = new Client({ intents: GatewayIntentBits.Guilds })
 client.commands = new Collection()
-
-const commandsPath = path.join(__dirname, 'commands')
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith('.js'))
-
-for (let file of commandFiles) {
-  const filePath = path.join(commandsPath, file)
-  const command = require(filePath)
+const commandsPath = './src/commands'
+const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'))
+for (const file of commandFiles) {
+  const { command } = await import(`./commands/${file}`)
   if ('data' in command && 'execute' in command) {
     client.commands.set(command.data.name, command)
+    logger.info(`registered command: ${command.data.name}`)
   } else {
-    logger.warn(`the command at ${filePath} has no data or execute property`)
+    logger.warn(`the command at ${file} has no data or execute property`)
   }
-}
-
-db.on('error', console.error.bind(console, 'connection error'))
-db.once('open', () => {
-  logger.success('database connected')
-})
-
-const nick = new Nick()
-const game = new Game()
-
-async function tweetnick(nick) {
-  try {
-    await twitter.v1.tweet(nick.name)
-  } catch (error) {
-    logger.error(error.message)
-  }
-}
-
-async function nickgen() {
-  try {
-    const guild = client.guilds.cache.get(config.guildId)
-    await nick.generator()
-    while (nick.name.length > 32) {
-      logger.warn(
-        `generated nick "${nick.name}" is over discord character limit. `
-      )
-      const channel = client.channels.cache.get(config.channelId)
-      channel.send(`i tried to change nick to ${nick.name}... but it's over the discord limit...`)
-      await nick.generator()
-      if (nick.name.length <= 32) {
-        break
-      }
-    }
-    guild.members.me.setNickname(nick.name)
-    logger.debug(`generated nick: ${nick.name}`)
-    process.env.NODE_ENV === 'production' && tweetnick(nick)
-    setTimeout(nickgen, randomTime(hourToMs(4), hourToMs(5)))
-  } catch (err) {
-    logger.error(err)
-  }
-}
-
-async function gamegen() {
-  const gen = await game.generator()
-  client.user.setActivity(gen, { type: ActivityType.Playing })
-  logger.debug(`generated game: ${gen}`)
-  setTimeout(gamegen, randomTime(hourToMs(2), hourToMs(5)))
-}
-
-async function broadcast() {
-  for (let source of rss.sourceList) {
-    logger.debug(`attempting to update source ${source.title}`)
-    try {
-      if (await source.update()) {
-        for (let post of source.latestPosts) {
-          logger.debug(
-            `source update: ${source.title} - ${post.guid || post.id}`
-          )
-          const channel = client.channels.cache.get(config.channelId)
-          if (source.url.includes('youtube')) {
-            channel.send(post.link)
-          } else {
-            const content = post.content || post.summary || post.description
-            const embed = new EmbedBuilder()
-              .setTitle(post.title || 'Untitled')
-              .setURL('enclosure' in post ? post.enclosure.url : post.link)
-              .setAuthor({ name: source.title })            
-            if (content) {
-              sanitise(content)
-              embed.setDescription(
-                content.length > 300 ? `${content.slice(0, 300)}...` : content
-              )
-            }
-            source.image && embed.setThumbnail(source.image)
-            channel.send({ embeds: [embed] })
-          }
-        }
-      }
-    } catch (error) {
-      if (error.message.includes('ENOTFOUND') || error.message.includes('404')) {
-        logger.error(`${source.title} is dead, possibly needs removing`)
-      } else {
-        logger.error(`${error.message} while attempting to update ${source.title}`)
-      }
-    }
-  } 
-
 }
 
 client.on(Events.ClientReady, async () => {
-  logger.success('connected to discord')
-  await rss.bootFeeds()
-  setInterval(broadcast, hourToMs(config.interval))
-  nickgen()
-  gamegen()
-  logger.debug(rss.sourceList)
+  await mongo.init()
+  await initFeeds()
+  logger.info('connected to discord')
+  setInterval(checkFeeds, 3600000, client)
+  gamegen(client)
+  nickgen(client)
 })
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isChatInputCommand()) return
+  if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu()) return
+  if (interaction.isStringSelectMenu()) {
+    if (await purgeFeed(interaction.values[0])) {
+      await interaction.update({ content: 'successfully deleted', components: [] })
+    }
+    return
+  }
   const command = interaction.client.commands.get(interaction.commandName)
   if (!command) {
     logger.error(`no command matching ${interaction.commandName} was found`)
     return
-  }
-  try {
+  } try {
     await command.execute(interaction)
   } catch (error) {
     logger.error(error)
-    await interaction.reply({ content: 'cant do that pal', ephemeral: true })
   }
+
 })
 
-client.login(config.token)
 
-process.on('SIGINT', () => {
-  logger.fatal('received SIGINT, exiting')
+client.login(process.env.token)
+process.on("unhandledRejection", (err) => logger.error(`Unhandled Rejection: ${err}`))
+process.on("uncaughtException", (err) => logger.error(`Uncaught Exception: ${err}`))
+process.on("SIGINT", () => {
+  logger.info('received SIGINT, exiting')
   process.exit()
 })
