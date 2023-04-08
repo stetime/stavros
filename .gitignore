@@ -1,6 +1,2 @@
 node_modules
 .env
-*.md
-seeds
-.DS_Store
-.vscode

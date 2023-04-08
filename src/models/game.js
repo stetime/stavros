@@ -1,8 +1,8 @@
-const mongoose = require('mongoose')
-const Schema = mongoose.Schema
+import { Schema, model } from 'mongoose'
 
-const GameSchema = new Schema({
+export const GameSchema = new Schema({
   body: String,
 })
 
-module.exports = mongoose.model('Game', GameSchema)
+const Game = model('Game', GameSchema)
+export default Game

@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js')
-const Adjective = require('../models/adjective')
+import { SlashCommandBuilder } from "discord.js"
+import { mongo } from "../intergrations/mongo.js"
 
-module.exports = {
+export const command = {
   data: new SlashCommandBuilder()
     .setName('addprefix')
     .setDescription('add a prefix to the bot')
@@ -13,18 +13,17 @@ module.exports = {
     ),
   async execute(interaction) {
     const input = interaction.options.getString('input')
-    if (await Adjective.findOne({ body: input })) {
+    if (await mongo.findPrefix(input)) {
       await interaction.reply({
-        content: `prefix ${input} is already in the db`,
-        ephemeral: true,
+        content: `${input} is already in the db`,
+        ephemeral: true
       })
       return
     }
-    const a = new Adjective({ body: input.toString() })
-    await a.save()
+    await mongo.addPrefix(input)
     await interaction.reply({
       content: `${input} added to the db`,
-      ephemeral: true,
+      ephemeral: true
     })
-  },
+  }
 }

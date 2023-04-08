@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js')
-const Game = require('../models/game')
+import { SlashCommandBuilder } from "discord.js"
+import { mongo } from '../intergrations/mongo.js'
 
-module.exports = {
+export const command = {
   data: new SlashCommandBuilder()
     .setName('addgame')
     .setDescription('add a game to the bot')
@@ -13,18 +13,17 @@ module.exports = {
     ),
   async execute(interaction) {
     const input = interaction.options.getString('input')
-    if (await Game.findOne({ body: input })) {
+    if (await mongo.findGame(input)) {
       await interaction.reply({
         content: `${input} is already in the db`,
-        ephemeral: true,
+        ephemeral: true
       })
       return
     }
-    const g = new Game({ body: input.toString() })
-    await g.save()
+    await mongo.addGame(input)
     await interaction.reply({
       content: `${input} added to the db`,
-      ephemeral: true,
+      ephemeral: true
     })
-  },
+  }
 }

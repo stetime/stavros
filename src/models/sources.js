@@ -1,11 +1,14 @@
-const mongoose = require('mongoose')
-const Schema = mongoose.Schema
+import { Schema, model } from 'mongoose'
 
-const SourceSchema = new Schema({
+export const SourceSchema = new Schema({
   title: String,
   url: String,
-  currentGuid: String,
   image: String,
+  latestPost: {
+    pubDate: Date,
+    guid: String,
+  },
 })
 
-module.exports = mongoose.model('Source', SourceSchema)
+const Source = model('Source', SourceSchema)
+export default Source

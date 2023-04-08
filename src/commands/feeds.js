@@ -1,6 +1,8 @@
-const { SlashCommandBuilder } = require('discord.js')
-let { sourceList } = require('../rss')
-module.exports = {
+import { SlashCommandBuilder } from "discord.js"
+import { EmbedBuilder } from "@discordjs/builders"
+import { sourceList } from '../rss.js'
+
+export const command = {
   data: new SlashCommandBuilder()
     .setName('feeds')
     .setDescription('list currently subscribed feeds'),
@@ -12,11 +14,16 @@ module.exports = {
       })
     } else {
       const results = sourceList.map((feed) => {
-        return `${feed.title}: ${feed.url}`
+        const embed = new EmbedBuilder()
+          .setTitle(feed.title)
+          .setURL(feed.url)
+          .setDescription(feed.url)
+        feed.image && embed.setThumbnail(feed.image)
+        return embed
       })
       await interaction.reply({
-        content: results.join('\n'),
-        ephemeral: true,
+        embeds: results,
+        ephemeral: true
       })
     }
   }
