@@ -19,20 +19,19 @@ class Feed {
     logger.debug(`attempting to update feed ${this.title}`)
     const parsed = await parser.parseURL(this.url)
     const latest = parsed.items[0]
-    const date = new Date(latest.isoDate)
     let announce
-    // explicitly converting guid to string because of edge cases 
-    // where rss-parser interprets this as an object
-    const guid = latest.guid?.toString() || latest.id?.toString()
+    const date = latest.isoDate
+    const guid = latest.guid || latest.id
     if (!date && !guid) {
       logger.warn(`found a malformed feed while trying to update ${this.title}`)
       return
     }
     if (date) {
+      logger.debug(`${date} vs ${this.latestPost?.pubDate}`)
       if (!this.latestPost?.pubDate || date > this.latestPost?.pubDate) {
         await mongo.updateFeed(this.id, date, guid)
         const index = parsed.items.findIndex(
-          (item) => item.isoDate === this.latestPost.pubDate?.toISOString()
+          (item) => item.isoDate === this.latestPost?.pubDate
         )
         announce = index !== -1 ? parsed.items.slice(0, index) : parsed.items.slice(0, 1)
         this.latestPost = {
@@ -92,13 +91,18 @@ async function purgeFeed(id) {
   return
 }
 
+
 async function initFeeds() {
   const sources = await mongo.getFeeds()
   sources.forEach((source) => {
     const { id, title, url, latestPost, image } = source
+    if (latestPost?.pubDate) {
+      latestPost.pubDate = latestPost.pubDate.toISOString()
+    }
     const feed = new Feed(id, title, url, latestPost, image)
     sourceList.push(feed)
   })
+  logger.debug(JSON.stringify(sourceList, null, 2))
 }
 
 async function checkFeeds(client) {
