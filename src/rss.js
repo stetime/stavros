@@ -21,13 +21,13 @@ class Feed {
     const latest = parsed.items[0]
     let announce
     const date = latest.isoDate
-    const guid = latest.guid || latest.id
+    // explicitly convert id to string re: edge case where rss-parser returns an object.
+    const guid = latest.guid.toString() || latest.id.toString()
     if (!date && !guid) {
       logger.warn(`found a malformed feed while trying to update ${this.title}`)
       return
     }
     if (date) {
-      logger.debug(`${date} vs ${this.latestPost?.pubDate}`)
       if (!this.latestPost?.pubDate || date > this.latestPost?.pubDate) {
         await mongo.updateFeed(this.id, date, guid)
         const index = parsed.items.findIndex(
