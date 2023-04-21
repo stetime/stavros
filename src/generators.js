@@ -1,7 +1,7 @@
 import { mongo } from './intergrations/mongo.js'
 import { ActivityType } from 'discord.js'
 import logger from './utils/logger.js'
-import tweet from './intergrations/twitter.js'
+// import tweet from './intergrations/twitter.js'
 
 
 class Game {
@@ -50,7 +50,7 @@ async function nickgen(client) {
       )
       await nick.generator()
     }
-    process.env.NODE_ENV === 'production' && tweet(nick.name)
+    // process.env.NODE_ENV === 'production' && tweet(nick.name)
     guild.members.me.setNickname(nick.name)
     setTimeout(nickgen, randomTime(hours(5), hours(12)), client)
   } catch (error) {

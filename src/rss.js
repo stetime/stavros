@@ -8,11 +8,11 @@ const sourceList = []
 
 class Feed {
   constructor(id, title, url, latestPost, image) {
-    this.id = id,
-      this.title = title,
-      this.url = url,
-      this.latestPost = latestPost || undefined,
-      this.image = image
+    (this.id = id),
+      (this.title = title),
+      (this.url = url),
+      (this.latestPost = latestPost || undefined),
+      (this.image = image)
   }
 
   async update() {
@@ -20,9 +20,12 @@ class Feed {
     const parsed = await parser.parseURL(this.url)
     const latest = parsed.items[0]
     let announce
-    const date = latest.isoDate
-    // explicitly convert id to string re: edge case where rss-parser returns an object.
-    const guid = latest.guid.toString() || latest.id.toString()
+    const date = new Date(latest.pubDate)
+    let guid = latest.guid || latest.id
+    // incase rss-parser perceives an isPermaLink="false" guid as an object:
+    if (typeof guid === Object) {
+      guid = null
+    }
     if (!date && !guid) {
       logger.warn(`found a malformed feed while trying to update ${this.title}`)
       return
@@ -31,9 +34,10 @@ class Feed {
       if (!this.latestPost?.pubDate || date > this.latestPost?.pubDate) {
         await mongo.updateFeed(this.id, date, guid)
         const index = parsed.items.findIndex(
-          (item) => item.isoDate === this.latestPost?.pubDate
+          (item) => item.pubDate === this.latestPost?.pubDate
         )
-        announce = index !== -1 ? parsed.items.slice(0, index) : parsed.items.slice(0, 1)
+        announce =
+          index !== -1 ? parsed.items.slice(0, index) : parsed.items.slice(0, 1)
         this.latestPost = {
           pubDate: date,
           guid: guid || null,
@@ -44,9 +48,14 @@ class Feed {
     } else {
       if (!this.latestPost?.guid || this.latestPost?.guid !== guid) {
         await mongo.updateFeed(this.id, null, guid)
-        announce = parsed.items.slice(0, parsed.items.findIndex(
-          (item) => item.guid === this.latestPost.guid || item.id === this.latestPost.guid
-        ) || 1)
+        announce = parsed.items.slice(
+          0,
+          parsed.items.findIndex(
+            (item) =>
+              item.guid === this.latestPost.guid ||
+              item.id === this.latestPost.guid
+          ) || 1
+        )
         this.latestPost = {
           pubDate: null,
           guid: guid,
@@ -91,16 +100,13 @@ async function purgeFeed(id) {
   return
 }
 
-
 async function initFeeds() {
   const sources = await mongo.getFeeds()
   sources.forEach((source) => {
     const { id, title, url, latestPost, image } = source
-    if (latestPost?.pubDate) {
-      latestPost.pubDate = latestPost.pubDate.toISOString()
-    }
     const feed = new Feed(id, title, url, latestPost, image)
     sourceList.push(feed)
+    logger.debug(source.latestPost?.pubDate instanceof Date)
   })
   logger.debug(JSON.stringify(sourceList, null, 2))
 }
