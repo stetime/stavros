@@ -3,7 +3,14 @@ import Parser from 'rss-parser'
 import logger from './utils/logger.js'
 import { EmbedBuilder } from '@discordjs/builders'
 
-const parser = new Parser()
+const parser = new Parser({
+  customFields: {
+    item: [
+      ['media:group', 'media', { keepArray: false }]
+    ]
+  }
+})
+
 const sourceList = []
 
 class Feed {
@@ -23,7 +30,7 @@ class Feed {
     const date = new Date(latest.pubDate)
     let guid = latest.guid || latest.id
     // incase rss-parser perceives an isPermaLink="false" guid as an object:
-    if (typeof guid === Object) {
+    if (typeof guid === 'object') {
       guid = null
     }
     if (!date && !guid) {
@@ -67,10 +74,6 @@ class Feed {
     return announce.slice(0, 3)
   }
 }
-
-// TODO: 'getImage'. look through:
-// feed.image, feed.itunes?.image, scraping parent domain.
-// this is perhaps bloat but will be useful for an actual rss reader.
 
 async function inputSingleFeed(url) {
   const feed = await parser.parseURL(url)
@@ -118,26 +121,24 @@ async function checkFeeds(client) {
       for (const post of update) {
         logger.debug(`source update ${source.title} - ${post.guid || post.id}`)
         const channel = client.channels.cache.get(process.env.channelId)
-        if (source.url.includes('youtube')) {
-          channel.send(post.link)
-        } else {
-          const content =
-            post.contentSnippet ||
-            post.content ||
-            post.summary ||
-            post.description
-          const embed = new EmbedBuilder()
-            .setTitle(post.title)
-            .setURL('enclosure' in post ? post.enclosure.url : post.link)
-            .setAuthor({ name: source.title })
-          if (content) {
-            embed.setDescription(
-              content.length > 300 ? `${content.slice(0, 300)}...` : content
-            )
-          }
-          source.image && embed.setThumbnail(source.image)
-          channel.send({ embeds: [embed] })
+        const content =
+          post.contentSnippet ||
+          post.content ||
+          post.summary ||
+          post.description ||
+          post.media?.['media:description'][0]
+        const embed = new EmbedBuilder()
+          .setTitle(post.title)
+          .setURL('enclosure' in post ? post.enclosure.url : post.link)
+          .setAuthor({ name: source.title })
+        if (content) {
+          embed.setDescription(
+            content.length > 300 ? `${content.slice(0, 300)}...` : content
+          )
         }
+        const image = source.image || post.media?.['media:thumbnail'][0]['$'].url || null
+        image && embed.setThumbnail(image)
+        channel.send({ embeds: [embed] })
       }
     }
   }
