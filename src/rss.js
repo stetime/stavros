@@ -27,7 +27,7 @@ class Feed {
     const parsed = await parser.parseURL(this.url)
     const latest = parsed.items[0]
     let announce
-    const date = new Date(latest.pubDate)
+    const date = new Date(latest.pubDate || latest.date)
     let guid = latest.guid || latest.id
     // incase rss-parser perceives an isPermaLink="false" guid as an object:
     if (typeof guid === 'object') {
@@ -41,7 +41,7 @@ class Feed {
       if (!this.latestPost?.pubDate || date > this.latestPost?.pubDate) {
         await mongo.updateFeed(this.id, date, guid)
         const index = parsed.items.findIndex(
-          (item) => item.pubDate === this.latestPost?.pubDate
+          (item) => new Date(item.pubDate || item.date) === this.latestPost?.pubDate
         )
         announce =
           index !== -1 ? parsed.items.slice(0, index) : parsed.items.slice(0, 1)
@@ -116,30 +116,35 @@ async function initFeeds() {
 
 async function checkFeeds(client) {
   for (const source of sourceList) {
-    const update = await source.update()
-    if (update) {
-      for (const post of update) {
-        logger.debug(`source update ${source.title} - ${post.guid || post.id}`)
-        const channel = client.channels.cache.get(process.env.channelId)
-        const content =
-          post.contentSnippet ||
-          post.content ||
-          post.summary ||
-          post.description ||
-          post.media?.['media:description'][0]
-        const embed = new EmbedBuilder()
-          .setTitle(post.title)
-          .setURL('enclosure' in post ? post.enclosure.url : post.link)
-          .setAuthor({ name: source.title })
-        if (content) {
-          embed.setDescription(
-            content.length > 300 ? `${content.slice(0, 300)}...` : content
-          )
+    try {
+      const update = await source.update()
+      if (update) {
+        for (const post of update) {
+          logger.debug(`source update ${source.title} - ${post.guid || post.id}`)
+          const channel = client.channels.cache.get(process.env.channelId)
+          const content =
+            post.contentSnippet ||
+            post.content ||
+            post.summary ||
+            post.description ||
+            post.media?.['media:description'][0]
+          const embed = new EmbedBuilder()
+            .setTitle(post.title)
+            .setURL('enclosure' in post ? post.enclosure.url : post.link)
+            .setAuthor({ name: source.title })
+          if (content) {
+            embed.setDescription(
+              content.length > 300 ? `${content.slice(0, 300)}...` : content
+            )
+          }
+          const image = source.image || post.media?.['media:thumbnail'][0]['$'].url || null
+          image && embed.setThumbnail(image)
+          channel.send({ embeds: [embed] })
         }
-        const image = source.image || post.media?.['media:thumbnail'][0]['$'].url || null
-        image && embed.setThumbnail(image)
-        channel.send({ embeds: [embed] })
       }
+    } catch (error) {
+      logger.error(`error while parsing ${source.title} - ${JSON.stringify(error, null, 2)}`)
+      continue
     }
   }
 }

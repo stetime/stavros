@@ -88,5 +88,9 @@ export const mongo = {
   async addGame(game) {
     const g = new Game({ body: game })
     await g.save()
+  },
+
+  async close() {
+    await mongoose.connection.close()
   }
 }

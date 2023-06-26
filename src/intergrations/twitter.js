@@ -12,7 +12,7 @@ async function tweet(content) {
   try {
     await twitter.v1.tweet(content)
   } catch (error) {
-    logger.error(error)
+    logger.error(JSON.stringify(error, null, 2))
   }
 }
 
