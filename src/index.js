@@ -59,13 +59,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 })
 
 client.login(process.env.token)
+
 process.on('unhandledRejection', (err) =>
   logger.error(`Unhandled Rejection: ${err}`)
 )
+
 process.on('uncaughtException', (err) =>
   logger.error(`Uncaught Exception: ${err}`)
 )
-process.on('SIGINT', () => {
+
+process.on('SIGINT', async () => {
   logger.info('received SIGINT, exiting')
+  await mongo.close()
+  logger.info('db connection closed')
   process.exit()
 })
