@@ -1,7 +1,7 @@
-import { mongo } from './intergrations/mongo.js'
+import { mongo } from './integrations/mongo.js'
 import { ActivityType } from 'discord.js'
 import logger from './utils/logger.js'
-import tweet from './intergrations/twitter.js'
+import tweet from './integrations/twitter.js'
 
 
 class Game {
