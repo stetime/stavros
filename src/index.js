@@ -1,6 +1,6 @@
 import logger from './utils/logger.js'
 import { Client, GatewayIntentBits, Collection, Events } from 'discord.js'
-import { mongo } from './intergrations/mongo.js'
+import { mongo } from './integrations/mongo.js'
 import { initFeeds, checkFeeds, purgeFeed } from './rss.js'
 import { gamegen, nickgen } from './generators.js'
 import { readdirSync } from 'fs'
@@ -27,7 +27,7 @@ client.on(Events.ClientReady, async () => {
   logger.info('connected to discord')
   setInterval(
     checkFeeds,
-    process.env.NODE_ENV === 'production' ? 3600000 : 300000,
+    process.env.NODE_ENV === 'production' ? 3600000 : 100000,
     client
   )
   gamegen(client)

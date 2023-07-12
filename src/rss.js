@@ -1,7 +1,8 @@
-import { mongo } from './intergrations/mongo.js'
+import { mongo } from './integrations/mongo.js'
 import Parser from 'rss-parser'
 import logger from './utils/logger.js'
 import { EmbedBuilder } from '@discordjs/builders'
+import { isAfter } from 'date-fns'
 
 const parser = new Parser({
   customFields: {
@@ -24,55 +25,82 @@ class Feed {
 
   async update() {
     logger.debug(`attempting to update feed ${this.title}`)
-    const parsed = await parser.parseURL(this.url)
-    const latest = parsed.items[0]
-    let announce
-    const date = new Date(latest.pubDate || latest.date)
-    let guid = latest.guid || latest.id
-    // incase rss-parser perceives an isPermaLink="false" guid as an object:
-    if (typeof guid === 'object') {
-      guid = null
-    }
-    if (!date && !guid) {
-      logger.warn(`found a malformed feed while trying to update ${this.title}`)
-      return
-    }
-    if (date) {
-      if (!this.latestPost?.pubDate || date > this.latestPost?.pubDate) {
+    try {
+      const remoteFeed = await parser.parseURL(this.url)
+      const latest = remoteFeed.items[0]
+      const date = new Date(latest.pubDate || latest.date)
+      const guid = latest.guid || latest.id
+      if (!date && !guid) {
+        throw new Error(`found a malformed feed while trying to update ${this.title}`)
+      }
+      let updates
+      if (date) {
+        updates = updateByDate(this.latestPost.pubDate, remoteFeed)
+      } else {
+        updates = updateByGuid(this.latestPost.guid, remoteFeed)
+      }
+      if (updates) {
         await mongo.updateFeed(this.id, date, guid)
-        const index = parsed.items.findIndex(
-          (item) => new Date(item.pubDate || item.date) === this.latestPost?.pubDate
-        )
-        announce =
-          index !== -1 ? parsed.items.slice(0, index) : parsed.items.slice(0, 1)
         this.latestPost = {
           pubDate: date,
-          guid: guid || null,
+          guid: guid
         }
-      } else {
-        return
       }
-    } else {
-      if (!this.latestPost?.guid || this.latestPost?.guid !== guid) {
-        await mongo.updateFeed(this.id, null, guid)
-        announce = parsed.items.slice(
-          0,
-          parsed.items.findIndex(
-            (item) =>
-              item.guid === this.latestPost.guid ||
-              item.id === this.latestPost.guid
-          ) || 1
-        )
-        this.latestPost = {
-          pubDate: null,
-          guid: guid,
-        }
-      } else {
-        return
-      }
+      return updates
+    } catch (error) {
+      logger.error(JSON.stringify(error, null, 2))
     }
-    return announce.slice(0, 3)
   }
+
+  async broadcast(post, channel) {
+    const content =
+      post.contentSnippet ||
+      post.content ||
+      post.summary ||
+      post.description ||
+      post.media?.['media:description'][0]
+    const embed = new EmbedBuilder()
+      .setTitle(post.title)
+      .setURL('enclosure' in post ? post.enclosure.url : post.link)
+      .setAuthor({ name: this.title })
+    content && embed.setDescription(
+      content.length > 300 ? `${content.slice(0, 300)}...` : content
+    )
+    const image = this.image || post.media?.['media:thumbnail'][0]['$'].url || null
+    image && embed.setThumbnail(image)
+    await channel.send({ embeds: [embed] })
+  }
+}
+
+
+function updateByDate(localDate, remoteFeed) {
+  const announce = []
+  if (!localDate) {
+    announce.push(remoteFeed.items[0])
+    return announce
+  }
+  for (const item of remoteFeed.items) {
+    const date = new Date(item.pubDate)
+    if (isAfter(date, localDate)) {
+      announce.push(item)
+    }
+  }
+  return announce.length > 0 ? announce : false
+}
+
+function updateByGuid(localGuid, remoteFeed) {
+  const announce = []
+  if (!localGuid) {
+    announce.push(remoteFeed.items[0])
+    return announce
+  }
+  for (const item of remoteFeed.items) {
+    if (item.guid === localGuid || item.id === localGuid) {
+      break
+    }
+    announce.push(item)
+  }
+  return announce.length > 0 ? announce : false
 }
 
 async function inputSingleFeed(url) {
@@ -115,31 +143,13 @@ async function initFeeds() {
 }
 
 async function checkFeeds(client) {
+  const channel = client.channels.cache.get(process.env.channelId)
   for (const source of sourceList) {
     try {
       const update = await source.update()
       if (update) {
         for (const post of update) {
-          logger.debug(`source update ${source.title} - ${post.guid || post.id}`)
-          const channel = client.channels.cache.get(process.env.channelId)
-          const content =
-            post.contentSnippet ||
-            post.content ||
-            post.summary ||
-            post.description ||
-            post.media?.['media:description'][0]
-          const embed = new EmbedBuilder()
-            .setTitle(post.title)
-            .setURL('enclosure' in post ? post.enclosure.url : post.link)
-            .setAuthor({ name: source.title })
-          if (content) {
-            embed.setDescription(
-              content.length > 300 ? `${content.slice(0, 300)}...` : content
-            )
-          }
-          const image = source.image || post.media?.['media:thumbnail'][0]['$'].url || null
-          image && embed.setThumbnail(image)
-          channel.send({ embeds: [embed] })
+          await source.broadcast(post, channel)
         }
       }
     } catch (error) {

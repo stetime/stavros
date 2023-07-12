@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js"
-import getPvm from '../intergrations/reddit.js'
+import getPvm from '../integrations/reddit.js'
 import logger from '../utils/logger.js'
 
 export const command = {

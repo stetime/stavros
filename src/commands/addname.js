@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js"
-import { mongo } from '../intergrations/mongo.js'
+import { mongo } from '../integrations/mongo.js'
 
 export const command = {
   data: new SlashCommandBuilder()
