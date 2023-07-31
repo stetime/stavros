@@ -153,10 +153,18 @@ async function checkFeeds(client) {
         }
       }
     } catch (error) {
-      logger.error(`error while parsing ${source.title} - ${JSON.stringify(error, null, 2)}`)
+      logger.error(
+        `error while parsing ${source.title} - ${JSON.stringify(error, null, 2)}`
+      )
       continue
     }
   }
 }
 
-export { sourceList, inputSingleFeed, purgeFeed, initFeeds, checkFeeds }
+export {
+  sourceList,
+  inputSingleFeed,
+  purgeFeed,
+  initFeeds,
+  checkFeeds
+}

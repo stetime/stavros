@@ -10,7 +10,7 @@ const twitter = new TwitterApi({
 
 async function tweet(content) {
   try {
-    await twitter.v1.tweet(content)
+    await twitter.v2.tweet(content)
   } catch (error) {
     logger.error(JSON.stringify(error, null, 2))
   }
