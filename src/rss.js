@@ -3,6 +3,7 @@ import Parser from 'rss-parser'
 import logger from './utils/logger.js'
 import { EmbedBuilder } from '@discordjs/builders'
 import { isAfter } from 'date-fns'
+import { getYoutubeRSS, checkYoutubeURL } from './integrations/youtube.js'
 
 const parser = new Parser({
   customFields: {
@@ -48,7 +49,9 @@ class Feed {
       }
       return updates
     } catch (error) {
-      logger.error(JSON.stringify(error, null, 2))
+      const adminChannel = client.channels.cache.get(process.env.adminChannel)
+      adminChannel.send(error)
+      logger.error(`error updating ${this.title} - ${JSON.stringify(error, null, 2)}`)
     }
   }
 
@@ -104,6 +107,11 @@ function updateByGuid(localGuid, remoteFeed) {
 }
 
 async function inputSingleFeed(url) {
+  if (url.includes('youtube') && checkYoutubeURL(url)) {
+    console.log('make me wanna SHIT!')
+    url = await getYoutubeRSS(url)
+  }
+  console.log(url)
   const feed = await parser.parseURL(url)
   if (feed.title) {
     if (await mongo.getFeed(url)) {
@@ -156,6 +164,8 @@ async function checkFeeds(client) {
       logger.error(
         `error while parsing ${source.title} - ${JSON.stringify(error, null, 2)}`
       )
+      const adminChannel = client.channels.cache.get(process.env.adminChannel)
+      adminChannel.send(`error while parsing ${source.title}`)
       continue
     }
   }
