@@ -42,6 +42,8 @@ export const command = {
       } else {
         await interaction.editReply('Can\'t do that pal')
         logger.error(error)
+        const adminChannel = client.channels.cache.get(process.env.adminChannel)
+        adminChannel.send(error)
       }
     }
 

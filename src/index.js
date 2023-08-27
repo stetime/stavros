@@ -1,5 +1,5 @@
 import logger from './utils/logger.js'
-import { Client, GatewayIntentBits, Collection, Events } from 'discord.js'
+import { Client, GatewayIntentBits, Collection, Events, EmbedBuilder, Colors } from 'discord.js'
 import { mongo } from './integrations/mongo.js'
 import { initFeeds, checkFeeds, purgeFeed } from './rss.js'
 import { gamegen, nickgen } from './generators.js'
@@ -60,12 +60,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.login(process.env.token)
 
-process.on('unhandledRejection', (err) =>
-  logger.error(`Unhandled Rejection: ${err}`)
+// error handling
+
+const adminChannel = client.channels.cache.get(process.env.adminChannel)
+
+function createErrorEmbed(error) {
+  return new EmbedBuilder()
+    .setColor(Colors.Red)
+    .setTitle(error.name)
+    .setDescription(error.message)
+}
+
+process.on('unhandledRejection', (error) => {
+  logger.error(`Unhandled Rejection: ${error}`)
+  adminChannel?.send({ content: `Unhandled Rejection`, embeds: [createErrorEmbed(error)] })
+}
 )
 
-process.on('uncaughtException', (err) =>
-  logger.error(`Uncaught Exception: ${err}`)
+process.on('uncaughtException', (error) => {
+  logger.error(`Uncaught Exception: ${error}`)
+  adminChannel?.send({ content: `Uncaught Exception`, embeds: [createErrorEmbed(error)] })
+}
 )
 
 process.on('SIGINT', async () => {
