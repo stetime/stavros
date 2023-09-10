@@ -36,9 +36,9 @@ class Feed {
       }
       let updates
       if (date) {
-        updates = updateByDate(this.latestPost.pubDate, remoteFeed)
+        updates = updateByDate(this.latestPost?.pubDate, remoteFeed)
       } else {
-        updates = updateByGuid(this.latestPost.guid, remoteFeed)
+        updates = updateByGuid(this.latestPost?.guid, remoteFeed)
       }
       if (updates.length > 0) {
         await mongo.updateFeed(this.id, date, guid)
