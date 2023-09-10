@@ -143,7 +143,6 @@ async function initFeeds() {
     const { id, title, url, latestPost, image } = source
     const feed = new Feed(id, title, url, latestPost, image)
     sourceList.push(feed)
-    logger.debug(source.latestPost?.pubDate instanceof Date)
   })
   logger.debug(JSON.stringify(sourceList, null, 2))
 }
