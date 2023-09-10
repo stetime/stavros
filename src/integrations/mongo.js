@@ -92,5 +92,6 @@ export const mongo = {
 
   async close() {
     await mongoose.connection.close()
+    logger.info('database disconnected')
   }
 }

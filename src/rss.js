@@ -40,18 +40,18 @@ class Feed {
       } else {
         updates = updateByGuid(this.latestPost.guid, remoteFeed)
       }
-      if (updates) {
+      if (updates.length > 0) {
         await mongo.updateFeed(this.id, date, guid)
         this.latestPost = {
           pubDate: date,
           guid: guid
         }
+        return updates.slice(0, 3)
       }
-      return updates
+      logger.debug(`no updates for ${this.title}`)
+      return
     } catch (error) {
-      const adminChannel = client.channels.cache.get(process.env.adminChannel)
-      adminChannel.send(error)
-      logger.error(`error updating ${this.title} - ${JSON.stringify(error, null, 2)}`)
+      logger.error(`error updating ${this.title} - ${error}`)
     }
   }
 
@@ -108,10 +108,8 @@ function updateByGuid(localGuid, remoteFeed) {
 
 async function inputSingleFeed(url) {
   if (url.includes('youtube') && checkYoutubeURL(url)) {
-    console.log('make me wanna SHIT!')
     url = await getYoutubeRSS(url)
   }
-  console.log(url)
   const feed = await parser.parseURL(url)
   if (feed.title) {
     if (await mongo.getFeed(url)) {
@@ -162,7 +160,7 @@ async function checkFeeds(client) {
       }
     } catch (error) {
       logger.error(
-        `error while parsing ${source.title} - ${JSON.stringify(error, null, 2)}`
+        `error while parsing ${source.title} - ${error}`
       )
       const adminChannel = client.channels.cache.get(process.env.adminChannel)
       adminChannel.send(`error while parsing ${source.title}`)
