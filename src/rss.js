@@ -1,16 +1,15 @@
 import { mongo } from './integrations/mongo.js'
 import Parser from 'rss-parser'
 import logger from './utils/logger.js'
+import handleError from './utils/errorHandler.js'
 import { EmbedBuilder } from '@discordjs/builders'
 import { isAfter } from 'date-fns'
 import { getYoutubeRSS, checkYoutubeURL } from './integrations/youtube.js'
 
 const parser = new Parser({
   customFields: {
-    item: [
-      ['media:group', 'media', { keepArray: false }]
-    ]
-  }
+    item: [['media:group', 'media', { keepArray: false }]],
+  },
 })
 
 const sourceList = []
@@ -26,33 +25,31 @@ class Feed {
 
   async update() {
     logger.debug(`attempting to update feed ${this.title}`)
-    try {
-      const remoteFeed = await parser.parseURL(this.url)
-      const latest = remoteFeed.items[0]
-      const date = new Date(latest.pubDate || latest.date)
-      const guid = latest.guid || latest.id
-      if (!date && !guid) {
-        throw new Error(`found a malformed feed while trying to update ${this.title}`)
-      }
-      let updates
-      if (date) {
-        updates = updateByDate(this.latestPost?.pubDate, remoteFeed)
-      } else {
-        updates = updateByGuid(this.latestPost?.guid, remoteFeed)
-      }
-      if (updates.length > 0) {
-        await mongo.updateFeed(this.id, date, guid)
-        this.latestPost = {
-          pubDate: date,
-          guid: guid
-        }
-        return updates.slice(0, 3)
-      }
-      logger.debug(`no updates for ${this.title}`)
-      return
-    } catch (error) {
-      logger.error(`error updating ${this.title} - ${error}`)
+
+    const remoteFeed = await parser.parseURL(this.url)
+    const latest = remoteFeed.items[0]
+    const date = new Date(latest.pubDate || latest.date)
+    const guid = latest.guid || latest.id
+    if (!date && !guid) {
+      throw new Error(
+        `found a malformed feed while trying to update ${this.title}`
+      )
     }
+
+    const updates = date
+      ? updateByDate(this.latestPost?.pubDate, remoteFeed)
+      : updateByGuid(this.latestPost?.guid, remoteFeed)
+
+    if (updates) {
+      await mongo.updateFeed(this.id, date, guid)
+      this.latestPost = {
+        pubDate: date,
+        guid: guid,
+      }
+      return updates.slice(0, 3)
+    }
+    logger.debug(`no updates for ${this.title}`)
+    return
   }
 
   async broadcast(post, channel) {
@@ -66,44 +63,35 @@ class Feed {
       .setTitle(post.title)
       .setURL('enclosure' in post ? post.enclosure.url : post.link)
       .setAuthor({ name: this.title })
-    content && embed.setDescription(
-      content.length > 300 ? `${content.slice(0, 300)}...` : content
-    )
-    const image = this.image || post.media?.['media:thumbnail'][0]['$'].url || null
+    content &&
+      embed.setDescription(
+        content.length > 300 ? `${content.slice(0, 300)}...` : content
+      )
+    const image =
+      this.image || post.media?.['media:thumbnail'][0]['$'].url || null
     image && embed.setThumbnail(image)
     await channel.send({ embeds: [embed] })
   }
 }
 
-
 function updateByDate(localDate, remoteFeed) {
-  const announce = []
   if (!localDate) {
-    announce.push(remoteFeed.items[0])
-    return announce
+    return [remoteFeed.items[0]]
   }
-  for (const item of remoteFeed.items) {
-    const date = new Date(item.pubDate)
-    if (isAfter(date, localDate)) {
-      announce.push(item)
-    }
-  }
-  return announce.length > 0 ? announce : false
+  const announce = remoteFeed.items.filter((item) =>
+    isAfter(new Date(item.pubDate), localDate)
+  )
+  return announce.length > 0 ? announce : null
 }
 
 function updateByGuid(localGuid, remoteFeed) {
-  const announce = []
   if (!localGuid) {
-    announce.push(remoteFeed.items[0])
-    return announce
+    return [remoteFeed.items[0]]
   }
-  for (const item of remoteFeed.items) {
-    if (item.guid === localGuid || item.id === localGuid) {
-      break
-    }
-    announce.push(item)
-  }
-  return announce.length > 0 ? announce : false
+  const idx = remoteFeed.items.findIndex(
+    (item) => item.guid === localGuid || item.id === localGuid
+  )
+  return idx !== -1 ? remoteFeed.items.slice(0, idx) : null
 }
 
 async function inputSingleFeed(url) {
@@ -158,20 +146,9 @@ async function checkFeeds(client) {
         }
       }
     } catch (error) {
-      logger.error(
-        `error while parsing ${source.title} - ${error}`
-      )
-      const adminChannel = client.channels.cache.get(process.env.adminChannel)
-      adminChannel.send(`error while parsing ${source.title}`)
-      continue
+      handleError(error, client)
     }
   }
 }
 
-export {
-  sourceList,
-  inputSingleFeed,
-  purgeFeed,
-  initFeeds,
-  checkFeeds
-}
+export { sourceList, inputSingleFeed, purgeFeed, initFeeds, checkFeeds }

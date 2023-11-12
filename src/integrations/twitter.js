@@ -1,5 +1,4 @@
 import { TwitterApi } from "twitter-api-v2"
-import logger from '../utils/logger.js'
 
 const twitter = new TwitterApi({
   appKey: process.env.twitterAppKey,
@@ -9,11 +8,7 @@ const twitter = new TwitterApi({
 })
 
 async function tweet(content) {
-  try {
-    await twitter.v2.tweet(content)
-  } catch (error) {
-    logger.error(JSON.stringify(error, null, 2))
-  }
+  await twitter.v2.tweet(content)
 }
 
 export default tweet

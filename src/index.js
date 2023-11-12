@@ -1,11 +1,18 @@
 import logger from './utils/logger.js'
-import { Client, GatewayIntentBits, Collection, Events, EmbedBuilder, Colors } from 'discord.js'
+import handleError from './utils/errorHandler.js'
+import { Client, GatewayIntentBits, Collection, Events } from 'discord.js'
 import { mongo } from './integrations/mongo.js'
 import { initFeeds, checkFeeds, purgeFeed } from './rss.js'
 import { gamegen, nickgen } from './generators.js'
 import { readdirSync } from 'fs'
 
-const client = new Client({ intents: GatewayIntentBits.Guilds })
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+})
 client.commands = new Collection()
 const commandsPath = './src/commands'
 const commandFiles = readdirSync(commandsPath).filter((file) =>
@@ -34,6 +41,26 @@ client.on(Events.ClientReady, async () => {
   nickgen(client)
 })
 
+
+client.on(Events.MessageCreate, async (message) => {
+  const urlRegex = /(https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/[^\s]+)/g
+
+  if (urlRegex.test(message.content)) {
+    const newContent = message.content.replace(urlRegex, (url) => {
+      return url.replace(/twitter\.com|x\.com/g, 'fxtwitter.com');
+    })
+
+    try {
+      await message.delete();
+
+      await message.channel.send(`${message.member.nickname}: ${newContent}`);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+})
+
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu())
     return
@@ -54,32 +81,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     await command.execute(interaction)
   } catch (error) {
-    logger.error(error)
+    handleError(error, client, interaction)
   }
 })
 
 client.login(process.env.token)
 
-// error handling
-
-const adminChannel = client.channels.cache.get(process.env.adminChannel)
-
-function createErrorEmbed(error) {
-  return new EmbedBuilder()
-    .setColor(Colors.Red)
-    .setTitle(error.name)
-    .setDescription(error.message)
-}
 
 process.on('unhandledRejection', (error) => {
-  logger.error(`Unhandled Rejection: ${error}`)
-  adminChannel?.send({ content: `Unhandled Rejection`, embeds: [createErrorEmbed(error)] })
+  handleError(error, client)
 }
 )
 
 process.on('uncaughtException', (error) => {
-  logger.error(`Uncaught Exception: ${error}`)
-  adminChannel?.send({ content: `Uncaught Exception`, embeds: [createErrorEmbed(error)] })
+  handleError(error, client)
 }
 )
 
