@@ -1,6 +1,7 @@
 import { mongo } from './integrations/mongo.js'
 import { ActivityType } from 'discord.js'
 import logger from './utils/logger.js'
+import handleError from './utils/errorHandler.js'
 import tweet from './integrations/twitter.js'
 
 
@@ -54,7 +55,7 @@ async function nickgen(client) {
     guild.members.me.setNickname(nick.name)
     setTimeout(nickgen, randomTime(hours(5), hours(12)), client)
   } catch (error) {
-    logger.error(error)
+    handleError(error, client)
   }
 }
 
@@ -65,7 +66,7 @@ async function gamegen(client) {
     client.user.setActivity(gen, { type: ActivityType.Playing })
     setTimeout(gamegen, randomTime(hours(5), hours(12)), client)
   } catch (error) {
-    logger.error(error)
+    handleError(error, client)
   }
 }
 
