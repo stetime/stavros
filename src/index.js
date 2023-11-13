@@ -43,6 +43,7 @@ client.on(Events.ClientReady, async () => {
 
 
 client.on(Events.MessageCreate, async (message) => {
+  logger.debug(message.member.displayName, message.content)
   const urlRegex = /(https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/[^\s]+)/g
 
   if (urlRegex.test(message.content)) {
@@ -53,9 +54,9 @@ client.on(Events.MessageCreate, async (message) => {
     try {
       await message.delete();
 
-      await message.channel.send(`${message.member.nickname}: ${newContent}`);
+      await message.channel.send(`${message.member.displayName}: ${newContent}`);
     } catch (error) {
-      console.error(error)
+      handleError(error, client)
     }
   }
 })
