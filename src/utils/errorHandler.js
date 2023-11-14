@@ -4,7 +4,6 @@ import { format } from 'date-fns'
 
 // get related guild?
 export default async function handleError(error, client, interaction = null) {
-  logger.error(error.message)
   logger.error(error.stack)
 
   if (
@@ -30,7 +29,7 @@ export default async function handleError(error, client, interaction = null) {
   const fields = [
     {
       name: 'Date',
-      value: format(new Date(), 'yyyy-MM-dd hh:mm'),
+      value: format(new Date(), 'yyyy-MM-dd HH:mm'),
       inline: true,
     }
   ]

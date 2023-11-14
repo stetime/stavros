@@ -3,7 +3,7 @@ import Parser from 'rss-parser'
 import logger from './utils/logger.js'
 import handleError from './utils/errorHandler.js'
 import { EmbedBuilder } from '@discordjs/builders'
-import { isAfter } from 'date-fns'
+import { isAfter, isValid } from 'date-fns'
 import { getYoutubeRSS, checkYoutubeURL } from './integrations/youtube.js'
 
 const parser = new Parser({
@@ -25,14 +25,15 @@ class Feed {
 
   async update() {
     logger.debug(`attempting to update feed ${this.title}`)
-
     const remoteFeed = await parser.parseURL(this.url)
     const latest = remoteFeed.items[0]
-    const date = new Date(latest.pubDate || latest.date)
-    const guid = latest.guid || latest.id
-    if (!date && !guid) {
-      throw new Error(
-        `found a malformed feed while trying to update ${this.title}`
+    logger.debug(`latest post:\n ${JSON.stringify(latest, null, 2)}`)
+    const date = new Date(latest?.pubDate || latest?.date)
+    const guid = latest?.guid || latest?.id
+
+    if (!isValid(date) && !guid) {
+      throw Error(
+        `found a malformed/dead feed while trying to update ${this.title}`
       )
     }
 
