@@ -43,7 +43,6 @@ client.on(Events.ClientReady, async () => {
 
 
 client.on(Events.MessageCreate, async (message) => {
-  logger.debug(message.member.displayName, message.content)
   const urlRegex = /(https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/[^\s]+)/g
 
   if (urlRegex.test(message.content)) {
