@@ -29,23 +29,19 @@ function extractChannelId(html) {
 }
 
 async function getYoutubeRSS(url) {
-  try {
-    const response = await axios.get(url)
-    if (response.status !== 200) {
-      logger.error('Youtube returned a non-200 status', response.status)
-      return null
-    }
-    const channelId = extractChannelId(response.data)
-    if (!channelId) {
-      logger.error("couldn't extract a channelId from response data")
-      return null
-    }
-    return `https://youtube.com/feeds/videos.xml?channel_id=${channelId}`
-  } catch (error) {
-    logger.error("error fetching from youtube", error.message)
-    throw error
+  const response = await axios.get(url)
+  if (response.status !== 200) {
+    logger.error('Youtube returned a non-200 status', response.status)
+    return null
   }
+  const channelId = extractChannelId(response.data)
+  if (!channelId) {
+    logger.error("couldn't extract a channelId from response data")
+    return null
+  }
+  return `https://youtube.com/feeds/videos.xml?channel_id=${channelId}`
 }
+
 
 function checkYoutubeURL(url) {
   const youtubeRssPattern = /https?:\/\/(?:www\.)?youtube\.com\/feeds\/videos\.xml\?.*/;

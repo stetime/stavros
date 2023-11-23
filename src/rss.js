@@ -120,7 +120,7 @@ async function purgeFeed(id) {
     const index = sourceList.findIndex((feed) => feed.id === id)
     sourceList.splice(index, 1)
     logger.info(`${match.title} purged from the database and source list`)
-    logger.debug(JSON.stringify(sourceList, null, 2))
+    logger.debug(`current source list:\n${JSON.stringify(sourceList, null, 2)}`)
     return true
   }
   return
