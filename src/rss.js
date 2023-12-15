@@ -146,6 +146,7 @@ async function checkFeeds(client) {
         }
       }
     } catch (error) {
+      error.source = source.title
       handleError(error, client)
     }
   }

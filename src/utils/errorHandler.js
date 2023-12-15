@@ -41,6 +41,12 @@ export default async function handleError(error, client, interaction = null) {
     )
   }
 
+  if (error.source) {
+    fields.push(
+      { name: 'source', value: error.source, inline: true }
+    )
+  }
+
   const adminChannel = client.channels.cache.get(process.env.adminChannel)
   const embed = new EmbedBuilder()
     .setColor(Colors.Red)
