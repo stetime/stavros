@@ -101,6 +101,5 @@ process.on('uncaughtException', (error) => {
 process.on('SIGINT', async () => {
   logger.info('received SIGINT, exiting')
   await mongo.close()
-  logger.info('db connection closed')
   process.exit()
 })
