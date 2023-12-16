@@ -16,11 +16,11 @@ const sourceList = []
 
 class Feed {
   constructor(id, title, url, latestPost, image) {
-    (this.id = id),
-      (this.title = title),
-      (this.url = url),
-      (this.latestPost = latestPost || undefined),
-      (this.image = image)
+    this.id = id
+    this.title = title
+    this.url = url
+    this.latestPost = latestPost || undefined
+    this.image = image
   }
 
   async update() {
