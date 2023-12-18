@@ -26,6 +26,9 @@ class Feed {
   async update() {
     logger.debug(`attempting to update feed ${this.title}`)
     const remoteFeed = await parser.parseURL(this.url)
+    if (!remoteFeed) {
+      return
+    }
     const latest = remoteFeed.items[0]
     const date = new Date(latest?.pubDate || latest?.date)
     const guid = latest?.guid || latest?.id
