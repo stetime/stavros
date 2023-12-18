@@ -24,8 +24,8 @@ dependencies:
     specifier: ^7.0.3
     version: 7.0.3
   rss-parser:
-    specifier: ^3.12.0
-    version: 3.12.0
+    specifier: git+https://github.com/stetime/rss-parser.git#refactor
+    version: github.com/stetime/rss-parser/dce88c71e460118d28c8fbf6a8454751a559af9c
   twitter-api-v2:
     specifier: ^1.14.2
     version: 1.14.2
@@ -1629,13 +1629,6 @@ packages:
       glob: 7.2.3
     dev: true
 
-  /rss-parser@3.12.0:
-    resolution: {integrity: sha512-aqD3E8iavcCdkhVxNDIdg1nkBI17jgqF+9OqPS1orwNaOgySdpvq6B+DoONLhzjzwV8mWg37sb60e4bmLK117A==}
-    dependencies:
-      entities: 2.2.0
-      xml2js: 0.4.23
-    dev: false
-
   /run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
     dependencies:
@@ -2025,8 +2018,8 @@ packages:
         optional: true
     dev: false
 
-  /xml2js@0.4.23:
-    resolution: {integrity: sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==}
+  /xml2js@0.5.0:
+    resolution: {integrity: sha512-drPFnkQJik/O+uPKpqSgr22mpuFHqKdbS835iAQrUC73L2F5WkboIRd63ai/2Yg6I1jzifPFKH2NTK+cfglkIA==}
     engines: {node: '>=4.0.0'}
     dependencies:
       sax: 1.2.4
@@ -2042,3 +2035,12 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  github.com/stetime/rss-parser/dce88c71e460118d28c8fbf6a8454751a559af9c:
+    resolution: {tarball: https://codeload.github.com/stetime/rss-parser/tar.gz/dce88c71e460118d28c8fbf6a8454751a559af9c}
+    name: rss-parser
+    version: 3.13.0
+    dependencies:
+      entities: 2.2.0
+      xml2js: 0.5.0
+    dev: false
