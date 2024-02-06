@@ -40,7 +40,13 @@ export const mongo = {
       latestPost: {
         pubDate: date,
         guid: guid,
-      },
+      }
+    })
+  },
+
+  async updateUrl(feedId, url) {
+    await Source.findByIdAndUpdate(feedId, {
+      url: url
     })
   },
 

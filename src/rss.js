@@ -29,6 +29,13 @@ class Feed {
     if (!remoteFeed) {
       return
     }
+
+    if (remoteFeed.redirectUrl) {
+      logger.debug(`redirectUrl for ${remoteFeed.title} : ${remoteFeed.redirectUrl}`)
+      await mongo.updateUrl(this.id, remoteFeed.redirectUrl)
+      this.url = remoteFeed.redirectUrl
+    }
+
     const latest = remoteFeed.items[0]
     const date = new Date(latest?.pubDate || latest?.date)
     const guid = latest?.guid || latest?.id
