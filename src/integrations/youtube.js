@@ -25,7 +25,7 @@ async function getYoutubeRSS(url) {
     logger.error("couldn't extract a channelId from response data")
     return null
   }
-  return `https://youtube.com/feeds/videos.xml?channel_id=${channelId}`
+  return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
 }
 
 
