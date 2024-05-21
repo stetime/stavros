@@ -26,7 +26,7 @@ class Feed {
   async update() {
     logger.debug(`attempting to update feed ${this.title}`)
     const remoteFeed = await parser.parseURL(this.url)
-    if (!remoteFeed) {
+    if (!remoteFeed?.items) {
       return
     }
 
