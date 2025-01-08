@@ -2,9 +2,7 @@ import logger from './logger.js'
 import { EmbedBuilder, Colors } from 'discord.js'
 import { format } from 'date-fns'
 
-// get related guild?
 export default async function handleError(error, client, interaction = null) {
-  logger.error(error.stack)
 
   if (
     interaction &&
@@ -46,6 +44,8 @@ export default async function handleError(error, client, interaction = null) {
       { name: 'source', value: error.source, inline: true }
     )
   }
+
+  logger.error(JSON.stringify({ stack: error.stack, fields: fields }, null, 2))
 
   const adminChannel = client.channels.cache.get(process.env.adminChannel)
   const embed = new EmbedBuilder()
