@@ -2,6 +2,15 @@ import logger from '../utils/logger.js'
 import { SlashCommandBuilder } from "discord.js"
 import { inputSingleFeed, sourceList } from '../rss.js'
 
+function isValidUrl(string) {
+  try {
+    new URL(string)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const command = {
   data: new SlashCommandBuilder()
     .setName('addfeed')
@@ -15,6 +24,12 @@ export const command = {
   async execute(interaction) {
     await interaction.deferReply()
     const input = interaction.options.getString('input')
+    if (!isValidUrl(input)) {
+      return await interaction.editReply({
+        content: 'That is not a valid URL',
+        ephemeral: true,
+      })
+    }
     const dupe = sourceList.find((feed) => feed.url === input)
     if (dupe) {
       logger.debug(`attempt to add dupe feed: ${input}`)
