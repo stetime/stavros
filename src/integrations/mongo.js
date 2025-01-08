@@ -60,6 +60,11 @@ export const mongo = {
     return game
   },
 
+  async getGames() {
+    const games = await Game.find({})
+    return games
+  },
+
   async getNick() {
     const prefix = await Prefix.aggregate([{ $sample: { size: 1 } }])
     const name = await Name.aggregate([{ $sample: { size: 1 } }])
@@ -69,6 +74,16 @@ export const mongo = {
   async findPrefix(searchTerm) {
     const prefix = await Prefix.findOne({ body: searchTerm })
     return prefix
+  },
+
+  async getPrefixes() {
+    const prefixes = await Prefix.find({})
+    return prefixes
+  },
+
+  async getNames() {
+    const names = await Name.find({})
+    return names
   },
 
   async findName(searchTerm) {
