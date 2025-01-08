@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon -r dotenv/config ./src/index.js",
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "dbdump": "node -r dotenv/config ./src/utils/dbDump.js"
   },
   "keywords": [],
   "author": "",
