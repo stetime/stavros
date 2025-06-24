@@ -5,9 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon -r dotenv/config ./src/index.js",
-    "start": "node ./src/index.js",
-    "dbdump": "node -r dotenv/config ./src/utils/dbDump.js"
+    "dev": "bun --env-file=.env.local ./src/index.js",
+    "start": "bun ./src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +25,11 @@
   "devDependencies": {
     "dotenv": "^16.0.3",
     "eslint": "^8.38.0",
-    "eslint-plugin-import": "^2.27.5"
+    "eslint-plugin-import": "^2.27.5",
+    "@types/bun": "latest"
+  },
+  "private": true,
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }
