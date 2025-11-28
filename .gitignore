@@ -6,3 +6,5 @@ feeds.json
 games.json
 names.json
 prefixes.json
+*.sqlite
+*.db
