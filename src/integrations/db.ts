@@ -21,7 +21,7 @@ class Db {
     this.init()
   }
 
-  private init() {
+  init() {
     this.db.run(
       `CREATE TABLE IF NOT EXISTS sources (
         id TEXT UNIQUE NOT NULL,
