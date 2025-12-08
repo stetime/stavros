@@ -6,8 +6,8 @@ interface Source {
   url: string
   title: string
   image?: string
-  latestpostDate?: string
-  latestpostGuid?: string
+  latest_post_date?: string
+  latest_post_guid?: string
   etags?: string
   lastModified?: string
 }
@@ -74,11 +74,12 @@ class Db {
   }
 
   updateFeed(feedId: string, date: string, guid: string): void {
+    console.log(date, guid, feedId)
     this.db
       .prepare(
         "UPDATE sources SET latest_post_date = ?, latest_post_guid = ? where id = ?"
       )
-      .run(date, guid, feedId)
+      .run(date ?? null, guid ?? null, feedId)
   }
 
   updateUrl(feedId: string, url: string): void {
@@ -107,13 +108,16 @@ class Db {
   }
 
   getNick() {
-    const prefix = this.db
-      .prepare("SELECT prefix FROM prefixes ORDER BY RANDOM() LIMIT 1")
+    const row = this.db
+      .prepare(
+        `
+    SELECT
+      (SELECT prefix FROM prefixes ORDER BY RANDOM() LIMIT 1) AS prefix,
+      (SELECT name   FROM names    ORDER BY RANDOM() LIMIT 1) AS name
+  `
+      )
       .get()
-    const name = this.db
-      .prepare("SELECT name FROM names ORDER BY RANDOM() LIMIT 1")
-      .get()
-    return { prefix, name }
+    return row
   }
 
   findPrefix(query: string) {

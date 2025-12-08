@@ -1,4 +1,4 @@
-import { mongo } from './integrations/mongo.js'
+import { db } from './integrations/db'
 import { ActivityType } from 'discord.js'
 import logger from './utils/logger.js'
 import handleError from './utils/errorHandler.js'
@@ -10,11 +10,12 @@ class Game {
     this.name = 'Really Simple Syndication'
   }
   async generator() {
-    const game = await mongo.getGame()
+    const game = db.getGame()
+    console.log(game)
     if (game.length < 1) {
       return
     }
-    this.name = game[0].body
+    this.name = game
     return this.name
   }
 }
@@ -25,11 +26,12 @@ class Nick {
     this.name = 'Stavros'
   }
   async generator() {
-    const { prefix, name } = await mongo.getNick()
+    const { prefix, name } = db.getNick()
+    console.log(prefix, name)
     if (prefix.length < 1 || name.length < 1) {
       return
     }
-    this.name = `${prefix[0].body} ${name[0].body}`
+    this.name = `${prefix} ${name}`
   }
 }
 

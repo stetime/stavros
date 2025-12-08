@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js"
-import { mongo } from '../integrations/mongo.js'
+import { db } from "../integrations/db"
 
 export const command = {
   data: new SlashCommandBuilder()
@@ -13,14 +13,14 @@ export const command = {
     ),
   async execute(interaction) {
     const input = interaction.options.getString('input')
-    if (await mongo.findName(input)) {
+    if (await db.findName(input)) {
       await interaction.reply({
         content: `${input} is already in the db`,
         ephemeral: true
       })
       return
     }
-    await mongo.addName(input)
+    db.addName(input)
     await interaction.reply({
       content: `${input} added to the db`,
       ephemeral: true

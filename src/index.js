@@ -1,7 +1,7 @@
 import logger from './utils/logger.js'
 import handleError from './utils/errorHandler.js'
 import { Client, GatewayIntentBits, Collection, Events } from 'discord.js'
-import { mongo } from './integrations/mongo.js'
+import { db } from './integrations/db'
 import { initFeeds, checkFeeds, purgeFeed } from './rss.js'
 import { gamegen, nickgen } from './generators.js'
 import { readdirSync } from 'fs'
@@ -29,12 +29,12 @@ for (const file of commandFiles) {
 }
 
 client.on(Events.ClientReady, async () => {
-  await mongo.init()
-  await initFeeds()
+  db.init()
+  initFeeds()
   logger.info('connected to discord')
   setInterval(
     checkFeeds,
-    process.env.NODE_ENV === 'production' ? 3600000 : 100000,
+    process.env.NODE_ENV === 'production' ? 3600000 : 30000,
     client
   )
   gamegen(client)
@@ -100,6 +100,6 @@ process.on('uncaughtException', (error) => {
 
 process.on('SIGINT', async () => {
   logger.info('received SIGINT, exiting')
-  await mongo.close()
+  db.close()
   process.exit()
 })

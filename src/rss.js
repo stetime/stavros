@@ -1,4 +1,4 @@
-import { mongo } from './integrations/mongo.js'
+import { db } from './integrations/db'
 import Parser from 'rss-parser'
 import logger from './utils/logger.js'
 import handleError from './utils/errorHandler.js'
@@ -32,7 +32,7 @@ class Feed {
 
     if (remoteFeed.redirectUrl) {
       logger.debug(`redirectUrl for ${remoteFeed.title} : ${remoteFeed.redirectUrl}`)
-      await mongo.updateUrl(this.id, remoteFeed.redirectUrl)
+      db.updateUrl(this.id, remoteFeed.redirectUrl)
       this.url = remoteFeed.redirectUrl
     }
 
@@ -51,7 +51,7 @@ class Feed {
       : updateByGuid(this.latestPost?.guid, remoteFeed)
 
     if (updates) {
-      await mongo.updateFeed(this.id, date, guid)
+      db.updateFeed(this.id, date.toISOString(), guid ?? null)
       this.latestPost = {
         pubDate: date,
         guid: guid,
@@ -110,12 +110,12 @@ async function inputSingleFeed(url) {
   }
   const feed = await parser.parseURL(url)
   if (feed.title) {
-    if (await mongo.getFeed(url)) {
+    if (db.getFeed(url)) {
       return false
     }
     const image = feed.image?.url || feed.itunes?.image || null
-    await mongo.addFeed(url, feed, image)
-    const dbFeed = await mongo.getFeed(url)
+    db.addFeed(url, feed.title, image)
+    const dbFeed = db.getFeed(url)
     return new Feed(dbFeed.id, dbFeed.title, dbFeed.url, null, dbFeed.image)
   } else {
     return false
@@ -125,7 +125,7 @@ async function inputSingleFeed(url) {
 async function purgeFeed(id) {
   const match = sourceList.find((feed) => feed.id === id)
   if (match) {
-    await mongo.purgeFeed(id)
+    db.purgeFeed(id)
     const index = sourceList.findIndex((feed) => feed.id === id)
     sourceList.splice(index, 1)
     logger.info(`${match.title} purged from the database and source list`)
@@ -135,10 +135,15 @@ async function purgeFeed(id) {
   return
 }
 
-async function initFeeds() {
-  const sources = await mongo.getFeeds()
+function initFeeds() {
+  const sources = db.getFeeds()
   sources.forEach((source) => {
-    const { id, title, url, latestPost, image } = source
+    logger.debug(JSON.stringify(source, null, 2))
+    const { id, title, url, latest_post_date, latest_post_guid, image } = source
+    const latestPost = latest_post_date || latest_post_guid ? {
+      pubDate: latest_post_date ? new Date(latest_post_date) : null,
+      guid: latest_post_guid ?? null,
+    } : null
     const feed = new Feed(id, title, url, latestPost, image)
     sourceList.push(feed)
   })
