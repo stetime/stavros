@@ -116,8 +116,8 @@ class Db {
       (SELECT name   FROM names    ORDER BY RANDOM() LIMIT 1) AS name
   `
       )
-      .get()
-    return row
+      .get() as { prefix: string; name: string } | undefined
+    return row ? row : null
   }
 
   findPrefix(query: string) {
