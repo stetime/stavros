@@ -1,6 +1,6 @@
 import logger from "./logger.js"
 import { EmbedBuilder, Colors } from "discord.js"
-import type { Interaction, Client } from "discord.js"
+import type { Interaction, Client, TextChannel } from "discord.js"
 import { format } from "date-fns"
 
 interface ErrorWithSource extends Error {
@@ -85,8 +85,8 @@ export default async function handleError(
   if (
     adminChannel &&
     "send" in adminChannel &&
-    typeof (adminChannel as any).send === "function"
+    typeof (adminChannel as TextChannel).send === "function"
   ) {
-    await (adminChannel as any).send({ embeds: [embed] })
+    await (adminChannel as TextChannel).send({ embeds: [embed] })
   }
 }
