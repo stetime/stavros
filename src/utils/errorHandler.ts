@@ -1,9 +1,9 @@
-import logger from "./logger.js"
+import logger from "./logger"
 import { EmbedBuilder, Colors } from "discord.js"
 import type { Interaction, Client, TextChannel } from "discord.js"
 import { format } from "date-fns"
 
-interface ErrorWithSource extends Error {
+export interface ErrorWithSource extends Error {
   source?: string
 }
 

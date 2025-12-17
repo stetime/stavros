@@ -1,9 +1,9 @@
-FROM node:lts-alpine
+FROM oven/bun:alpine
 WORKDIR /app
-COPY package.json .
+COPY package.json bun.lock ./
 ENV NODE_ENV='production'
 RUN apk --no-cache add git
-RUN npm install
-COPY --chown=node:node . .
-USER node
-CMD ["node", "src/index.js"]
+RUN bun install --frozen-lockfile --production
+COPY --chown=bun:bun . .
+USER bun
+CMD ["bun", "run", "src/index.ts"]

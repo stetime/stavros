@@ -11,15 +11,13 @@ for (const req of required) {
 }
 const { clientId, guildId, token } = process.env
 
-console.log(clientId, guildId, token)
-
 const commands = []
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const commandsPath = path.resolve(__dirname, "..", "commands")
 const commandFiles = fs
   .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".js"))
+  .filter((file) => file.endsWith(".ts"))
 console.log(commandFiles)
 
 for (const file of commandFiles) {
@@ -27,7 +25,7 @@ for (const file of commandFiles) {
   commands.push(command.data.toJSON())
 }
 
-const rest = new REST({ version: "10" }).setToken(token)
+const rest = new REST({ version: "10" }).setToken(token as string)
 
 ;(async () => {
   try {
@@ -35,8 +33,8 @@ const rest = new REST({ version: "10" }).setToken(token)
       `Started refreshing ${commands.length} application (/) commands.`
     )
 
-    const data = await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
+    const data: any = await rest.put(
+      Routes.applicationGuildCommands(clientId as string, guildId as string),
       { body: commands }
     )
 

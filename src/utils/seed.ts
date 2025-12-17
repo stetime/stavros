@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite"
-import logger from "./utils/logger"
+import logger from "./logger"
 
 interface Source {
   id: string
@@ -93,7 +93,7 @@ class sqlitedb {
       )
       .get()
 
-    return row // { prefix: "cool", name: "dragon" }
+    return row
   }
 }
 
@@ -123,7 +123,7 @@ async function seedNames() {
 
 async function seedFeeds() {
   const json = await Bun.file("./feeds.json").json()
-  json.forEach((item) => {
+  json.forEach((item: any) => {
     const j = {
       url: item.url,
       title: item.title,
@@ -134,5 +134,3 @@ async function seedFeeds() {
     db.addFeed(j.url, j.title, j.image)
   })
 }
-
-seedFeeds()

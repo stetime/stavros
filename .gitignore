@@ -2,10 +2,6 @@ node_modules
 .env
 .env.local
 .vscode
-feeds.json
-games.json
-names.json
-prefixes.json
+*.json
 *.sqlite
-*.db
-db.*
+data/*

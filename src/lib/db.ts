@@ -1,7 +1,9 @@
 import { Database } from "bun:sqlite"
 import logger from "../utils/logger.js"
+import path from "path"
+import { mkdirSync } from "fs"
 
-interface Source {
+export interface Source {
   id?: string
   url: string
   title: string
@@ -14,8 +16,21 @@ interface Source {
 
 class Db {
   private db: Database
-  constructor(dbPath: string = "./db.sqlite") {
+  constructor(
+    dbPath: string = process.env.dbPath ||
+      path.join(process.cwd(), "data", "app.db")
+  ) {
+    console.log("CWD:", process.cwd())
+    mkdirSync(path.dirname(dbPath), { recursive: true })
     this.db = new Database(dbPath, { create: true, strict: true })
+    console.log(
+      "Tables:",
+      this.db.query("SELECT name FROM sqlite_master WHERE type='table';").all()
+    )
+    console.log(
+      "Row count:",
+      this.db.query("SELECT COUNT(*) as count FROM sources;").get()
+    )
     this.db.run("PRAGMA journal_mode = WAL")
     logger.info("database initialised")
     this.init()
@@ -63,17 +78,25 @@ class Db {
       .get(url) as Source | null
   }
 
-  addFeed(url: string, title: string, image?: string): Source | undefined {
+  addFeed(
+    url: string,
+    title: string,
+    image: string | null
+  ): Source | undefined {
     const id = Bun.randomUUIDv7()
     const row = this.db
       .prepare(
-        "INSERT INTO sources (id, url, title, image) VALUES (?, ?, ?) RETURNING *"
+        "INSERT INTO sources (id, url, title, image) VALUES (?, ?, ?, ?) RETURNING *"
       )
       .get(id, url, title, image ?? null)
     return row as Source | undefined
   }
 
-  updateFeed(feedId: string, date: string, guid: string): void {
+  updateFeed(
+    feedId: string,
+    date: string | undefined,
+    guid: string | undefined
+  ): void {
     console.log(date, guid, feedId)
     this.db
       .prepare(

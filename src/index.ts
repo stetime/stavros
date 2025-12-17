@@ -1,9 +1,9 @@
 import logger from "./utils/logger"
 import handleError from "./utils/errorHandler"
 import { Client, GatewayIntentBits, Collection, Events } from "discord.js"
-import { db } from "./integrations/db"
-import { initFeeds, checkFeeds, purgeFeed } from "./rss"
-import { gamegen, nickgen } from "./generators"
+import { db } from "./lib/db"
+import { initFeeds, checkFeeds, purgeFeed } from "./lib/rss"
+import { gamegen, nickgen } from "./lib/generators"
 import { readdirSync } from "fs"
 
 declare module "discord.js" {
@@ -21,8 +21,8 @@ const client = new Client({
 })
 client.commands = new Collection()
 const commandsPath = "./src/commands"
-const commandFiles = readdirSync(commandsPath).filter((file) =>
-  file.endsWith(".js")
+const commandFiles = readdirSync(commandsPath).filter(
+  (file) => file.endsWith(".js") || file.endsWith(".ts")
 )
 for (const file of commandFiles) {
   const { command } = await import(`./commands/${file}`)
@@ -40,7 +40,7 @@ client.on(Events.ClientReady, async () => {
   logger.info("connected to discord")
   setInterval(
     checkFeeds,
-    process.env.NODE_ENV === "production" ? 3600000 : 30000,
+    process.env.NODE_ENV === "production" ? 3600000 : 80000,
     client
   )
   gamegen(client)
@@ -69,7 +69,7 @@ client.on(Events.MessageCreate, async (message) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu())
     return
-  if (interaction.isStringSelectMenu()) {
+  if (interaction.isStringSelectMenu() && interaction.values[0]) {
     if (await purgeFeed(interaction.values[0])) {
       await interaction.update({
         content: "successfully deleted",
@@ -78,6 +78,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
     return
   }
+  if (!interaction.isChatInputCommand()) return
   const command = interaction.client.commands.get(interaction.commandName)
   if (!command) {
     logger.error(`no command matching ${interaction.commandName} was found`)

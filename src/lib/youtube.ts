@@ -1,4 +1,3 @@
-import axios from "axios"
 import { load } from "cheerio"
 import logger from "../utils/logger"
 
@@ -13,13 +12,13 @@ function extractChannelId(html: string) {
   }
 }
 
-async function getYoutubeRSS(url: string) {
-  const response = await axios.get(url)
-  if (response.status !== 200) {
-    logger.error("Youtube returned a non-200 status", response.status)
+async function getYoutubeRSS(url: string): Promise<string | null> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    logger.error("Youtube returned a non-200 status", res.status)
     return null
   }
-  const channelId = extractChannelId(response.data)
+  const channelId = extractChannelId(await res.text())
   if (!channelId) {
     logger.error("couldn't extract a channelId from response data")
     return null

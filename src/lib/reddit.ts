@@ -27,7 +27,7 @@ async function getToken(
       headers: {
         Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Stavros/1.0.0",
+        "User-Agent": "rssbot/1.0.0",
       },
       body: body.toString(),
     })
@@ -51,7 +51,7 @@ async function getPvm() {
     const res = await fetch(apiUrl, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "User-Agent": "Stavros/1.0.0",
+        "User-Agent": "rssbot/1.0.0",
       },
     })
 
