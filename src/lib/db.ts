@@ -23,14 +23,6 @@ class Db {
     console.log("CWD:", process.cwd())
     mkdirSync(path.dirname(dbPath), { recursive: true })
     this.db = new Database(dbPath, { create: true, strict: true })
-    console.log(
-      "Tables:",
-      this.db.query("SELECT name FROM sqlite_master WHERE type='table';").all()
-    )
-    console.log(
-      "Row count:",
-      this.db.query("SELECT COUNT(*) as count FROM sources;").get()
-    )
     this.db.run("PRAGMA journal_mode = WAL")
     logger.info("database initialised")
     this.init()
