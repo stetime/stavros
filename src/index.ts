@@ -40,11 +40,17 @@ client.on(Events.ClientReady, async () => {
   logger.info("connected to discord")
   setInterval(
     checkFeeds,
-    process.env.NODE_ENV === "production" ? 3600000 : 80000,
+    process.env.NODE_ENV === "production" ? 36000000 : 80000,
     client
   )
   gamegen(client)
   nickgen(client)
+  process.env.NODE_ENV !== "production" && setInterval(() => {
+    logger.debug(`WebSocket ping: ${client.ws.ping}`)
+    logger.debug(`WebSocket status: ${client.ws.status}`)
+    logger.debug(`Client ready: ${client.isReady()}`)
+    logger.debug(`Gateway URL: ${client.ws.gateway}`)
+  }, 30000)
 })
 
 client.on(Events.MessageCreate, async (message) => {
@@ -92,6 +98,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
 })
 
 client.login(process.env.token)
+
+client.on(Events.ShardReady, () => {
+  logger.debug(`Shard Ready`)
+})
+
+client.on(Events.ShardError, (error) => {
+  handleError(error, client)
+})
+
+client.on(Events.ShardDisconnect, (event, id) => {
+  logger.warn(`shard ${id} disconnected`, event)
+})
+
+client.on(Events.ShardReconnecting, (id) => {
+  logger.info(`shard ${id} reconnecting`)
+})
+
+client.on(Events.Error, (error) => {
+  logger.error(error)
+})
 
 process.on("unhandledRejection", (error) => {
   handleError(error, client)

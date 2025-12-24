@@ -88,6 +88,7 @@ class Feed {
       : updateByGuid(this.latestPost?.guid, remoteFeed)
 
     if (updates) {
+      logger.debug(`found ${updates.length} new posts for ${this.title}`)
       db.updateFeed(this.id, date, guid)
       this.latestPost = {
         pubDate: date,
@@ -211,6 +212,7 @@ function initFeeds() {
 }
 
 async function checkFeeds(client: Client) {
+  const startTime = Date.now()
   const channel = client.channels.cache.get(process.env.channelId as string)
   for (const source of sourceList) {
     try {
@@ -230,6 +232,11 @@ async function checkFeeds(client: Client) {
         handleError(errorWithSource, client)
       }
     }
+  }
+  const duration = Date.now() - startTime
+  logger.info(`rss check completed in ${duration} ms`)
+  if (duration > 30000) {
+    logger.warn(`rss check took an unusually long time: ${duration} ms`)
   }
 }
 

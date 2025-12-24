@@ -1,7 +1,6 @@
 import logger from "./logger"
 import { EmbedBuilder, Colors } from "discord.js"
 import type { Interaction, Client, TextChannel } from "discord.js"
-import { format } from "date-fns"
 
 export interface ErrorWithSource extends Error {
   source?: string
@@ -48,7 +47,7 @@ export default async function handleError(
   const fields: ErrorField[] = [
     {
       name: "Date",
-      value: format(new Date(), "yyyy-MM-dd HH:mm"),
+      value: (new Date()).toISOString(),
       inline: true,
     },
   ]

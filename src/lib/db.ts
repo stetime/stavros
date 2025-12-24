@@ -1,7 +1,9 @@
-import { Database } from "bun:sqlite"
+import Database from "better-sqlite3"
+import type { Database as DatabaseType, Statement } from "better-sqlite3"
 import logger from "../utils/logger.js"
 import path from "path"
 import { mkdirSync } from "fs"
+import { randomUUID } from "crypto"
 
 export interface Source {
   id?: string
@@ -15,21 +17,54 @@ export interface Source {
 }
 
 class Db {
-  private db: Database
+  private db: DatabaseType
+  private statements: {
+    updateFeed: Statement
+    updateUrl: Statement
+    getFeed: Statement
+    deleteFeed: Statement
+    getFeeds: Statement
+    addFeed: Statement
+  }
+
   constructor(
     dbPath: string = process.env.dbPath ||
       path.join(process.cwd(), "data", "app.db")
   ) {
-    console.log("CWD:", process.cwd())
     mkdirSync(path.dirname(dbPath), { recursive: true })
-    this.db = new Database(dbPath, { create: true, strict: true })
-    this.db.run("PRAGMA journal_mode = WAL")
+    this.db = new Database(dbPath)
+    this.db.exec("PRAGMA journal_mode = WAL")
+    this.db.exec("PRAGMA synchronous = NORMAL")
+    this.db.exec("PRAGMA wal_autocheckpoint = 1000")
     logger.info("database initialised")
     this.init()
+
+    // Initialize statements after tables are created
+    this.statements = {
+      updateFeed: this.db.prepare<
+        Source,
+        [string | null, string | null, string]
+      >(
+        "UPDATE sources SET latest_post_date = ?, latest_post_guid = ? WHERE id = ?"
+      ),
+      updateUrl: this.db.prepare<Source, [string, string]>(
+        "UPDATE sources SET url = ? WHERE id = ?"
+      ),
+      getFeed: this.db.prepare<Source, [string]>(
+        "SELECT * FROM sources WHERE url = ?"
+      ),
+      deleteFeed: this.db.prepare<Source, [string]>(
+        "DELETE FROM sources WHERE id = ?"
+      ),
+      getFeeds: this.db.prepare<Source, []>("SELECT * FROM sources"),
+      addFeed: this.db.prepare<Source, [string, string, string, string | null]>(
+        "INSERT INTO sources (id, url, title, image) VALUES (?, ?, ?, ?) RETURNING *"
+      ),
+    }
   }
 
   init() {
-    this.db.run(
+    this.db.exec(
       `CREATE TABLE IF NOT EXISTS sources (
         id TEXT UNIQUE NOT NULL,
         url TEXT UNIQUE NOT NULL,
@@ -41,19 +76,19 @@ class Db {
         last_modified TEXT
       );`
     )
-    this.db.run(
+    this.db.exec(
       `CREATE TABLE IF NOT EXISTS games (
         game TEXT PRIMARY KEY UNIQUE NOT NULL
       ) WITHOUT ROWID
       `
     )
-    this.db.run(
+    this.db.exec(
       `CREATE TABLE IF NOT EXISTS names(
         name TEXT PRIMARY KEY UNIQUE NOT NULL
       ) WITHOUT ROWID
        `
     )
-    this.db.run(
+    this.db.exec(
       `CREATE TABLE IF NOT EXISTS prefixes(
         prefix TEXT PRIMARY KEY UNIQUE NOT NULL
       ) WITHOUT ROWID`
@@ -61,13 +96,11 @@ class Db {
   }
 
   getFeeds(): Source[] {
-    return this.db.prepare("SELECT * FROM sources").all() as Source[]
+    return this.statements.getFeeds.all() as Source[]
   }
 
   getFeed(url: string): Source | null {
-    return this.db
-      .prepare("SELECT * FROM sources WHERE url = ?")
-      .get(url) as Source | null
+    return (this.statements.getFeed.get(url) as Source) ?? null
   }
 
   addFeed(
@@ -75,13 +108,10 @@ class Db {
     title: string,
     image: string | null
   ): Source | undefined {
-    const id = Bun.randomUUIDv7()
-    const row = this.db
-      .prepare(
-        "INSERT INTO sources (id, url, title, image) VALUES (?, ?, ?, ?) RETURNING *"
-      )
-      .get(id, url, title, image ?? null)
-    return row as Source | undefined
+    const id = randomUUID()
+    return this.statements.addFeed.get(id, url, title, image ?? null) as
+      | Source
+      | undefined
   }
 
   updateFeed(
@@ -89,22 +119,16 @@ class Db {
     date: string | undefined,
     guid: string | undefined
   ): void {
-    console.log(date, guid, feedId)
-    this.db
-      .prepare(
-        "UPDATE sources SET latest_post_date = ?, latest_post_guid = ? where id = ?"
-      )
-      .run(date ?? null, guid ?? null, feedId)
+    logger.debug("running update statement")
+    this.statements.updateFeed.run(date ?? null, guid ?? null, feedId)
   }
 
   updateUrl(feedId: string, url: string): void {
-    this.db.prepare("UPDATE sources SET url = ? WHERE id = ?").run(url, feedId)
+    this.statements.updateUrl.run(url, feedId)
   }
 
   purgeFeed(feedId: string): boolean {
-    const result = this.db
-      .prepare("DELETE FROM sources WHERE id = ?")
-      .run(feedId)
+    const result = this.statements.deleteFeed.run(feedId)
     return result.changes > 0
   }
 
