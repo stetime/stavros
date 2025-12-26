@@ -10,6 +10,16 @@ type RedditPost = {
   }
 }
 
+type RedditApiResponse = {
+  data: {
+    children: RedditPost[]
+  }
+}
+
+type RedditTokenResponse = {
+  access_token: string
+}
+
 async function getToken(
   url: string,
   id: string,
@@ -36,7 +46,7 @@ async function getToken(
       throw new Error(`Reddit token refresh failed: HTTP ${res.status}`)
     }
 
-    const json = await res.json()
+    const json = (await res.json()) as RedditTokenResponse
     accessToken = json.access_token
     logger.debug("successfully refreshed reddit api token")
   } catch (error) {
@@ -65,12 +75,13 @@ async function getPvm() {
       throw new Error(`Reddit API error: HTTP ${res.status}`)
     }
 
-    const json = await res.json()
+    const json = (await res.json()) as RedditApiResponse
     const posts = json.data.children
     const withImages = posts.filter((post: RedditPost) => {
       return post.data.url && post.data.url.match(/\.(jpe?g|png|gif)$/)
     })
-    return withImages[Math.floor(Math.random() * withImages.length)].data.url
+    const randomPost = withImages[Math.floor(Math.random() * withImages.length)]
+    return randomPost?.data.url
   } catch (error) {
     error instanceof Error &&
       logger.error(`error getting PVM: ${error.message}`)
