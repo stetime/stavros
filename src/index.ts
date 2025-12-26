@@ -44,7 +44,7 @@ client.on(Events.ClientReady, async () => {
   logger.info("connected to discord")
   setInterval(
     checkFeeds,
-    process.env.NODE_ENV === "production" ? 36000000 : 80000,
+    parseInt(process.env.CHECK_INTERVAL as string) || 60000,
     client
   )
   gamegen(client)
