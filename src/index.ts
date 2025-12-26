@@ -1,10 +1,12 @@
-import logger from "./utils/logger"
-import handleError from "./utils/errorHandler"
+import logger from "./utils/logger.js"
+import handleError from "./utils/errorHandler.js"
 import { Client, GatewayIntentBits, Collection, Events } from "discord.js"
-import { db } from "./lib/db"
-import { initFeeds, checkFeeds, purgeFeed } from "./lib/rss"
-import { gamegen, nickgen } from "./lib/generators"
+import { db } from "./lib/db.js"
+import { initFeeds, checkFeeds, purgeFeed } from "./lib/rss.js"
+import { gamegen, nickgen } from "./lib/generators.js"
 import { readdirSync } from "fs"
+import { fileURLToPath } from "url"
+import { dirname, join } from "path"
 
 declare module "discord.js" {
   interface Client {
@@ -20,7 +22,9 @@ const client = new Client({
   ],
 })
 client.commands = new Collection()
-const commandsPath = "./src/commands"
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const commandsPath = join(__dirname, "commands")
 const commandFiles = readdirSync(commandsPath).filter(
   (file) => file.endsWith(".js") || file.endsWith(".ts")
 )
@@ -45,12 +49,13 @@ client.on(Events.ClientReady, async () => {
   )
   gamegen(client)
   nickgen(client)
-  process.env.NODE_ENV !== "production" && setInterval(() => {
-    logger.debug(`WebSocket ping: ${client.ws.ping}`)
-    logger.debug(`WebSocket status: ${client.ws.status}`)
-    logger.debug(`Client ready: ${client.isReady()}`)
-    logger.debug(`Gateway URL: ${client.ws.gateway}`)
-  }, 30000)
+  process.env.NODE_ENV !== "production" &&
+    setInterval(() => {
+      logger.debug(`WebSocket ping: ${client.ws.ping}`)
+      logger.debug(`WebSocket status: ${client.ws.status}`)
+      logger.debug(`Client ready: ${client.isReady()}`)
+      logger.debug(`Gateway URL: ${client.ws.gateway}`)
+    }, 30000)
 })
 
 client.on(Events.MessageCreate, async (message) => {

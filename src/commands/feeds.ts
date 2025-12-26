@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js"
 import { EmbedBuilder } from "@discordjs/builders"
-import { sourceList } from "../lib/rss"
+import { sourceList } from "../lib/rss.js"
 import type { CommandInteraction } from "discord.js"
 
 export const command = {

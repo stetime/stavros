@@ -1,4 +1,4 @@
-import logger from "./logger"
+import logger from "./logger.js"
 import { EmbedBuilder, Colors } from "discord.js"
 import type { Interaction, Client, TextChannel } from "discord.js"
 
@@ -47,7 +47,7 @@ export default async function handleError(
   const fields: ErrorField[] = [
     {
       name: "Date",
-      value: (new Date()).toISOString(),
+      value: new Date().toISOString(),
       inline: true,
     },
   ]

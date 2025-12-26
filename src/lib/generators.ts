@@ -1,9 +1,9 @@
-import { db } from "./db"
+import { db } from "./db.js"
 import { ActivityType } from "discord.js"
 import type { Client } from "discord.js"
-import logger from "../utils/logger"
-import handleError from "../utils/errorHandler"
-import tweet from "./twitter"
+import logger from "../utils/logger.js"
+import handleError from "../utils/errorHandler.js"
+import tweet from "./twitter.js"
 
 class Game {
   name: string

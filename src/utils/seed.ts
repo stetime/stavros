@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Database } from "bun:sqlite"
 import logger from "./logger"
 

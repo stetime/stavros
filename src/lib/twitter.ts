@@ -1,6 +1,6 @@
 import { TwitterApi } from "twitter-api-v2"
-
 const twitter = new TwitterApi({
+  // @ts-ignore
   appKey: process.env.twitterAppKey,
   appSecret: process.env.twitterAppSecret,
   accessToken: process.env.twitterAccessToken,

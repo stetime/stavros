@@ -1,3 +1,6 @@
 node_modules
 *.log
 .vscode
+.env
+.env.local
+data/

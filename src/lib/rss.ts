@@ -1,11 +1,11 @@
-import { db } from "./db"
+import { db } from "./db.js"
 import Parser from "rss-parser"
-import logger from "../utils/logger"
-import handleError from "../utils/errorHandler"
+import logger from "../utils/logger.js"
+import handleError from "../utils/errorHandler.js"
 import { EmbedBuilder } from "@discordjs/builders"
-import { getYoutubeRSS, checkYoutubeURL } from "./youtube"
+import { getYoutubeRSS, checkYoutubeURL } from "./youtube.js"
 import type { Client, TextBasedChannel } from "discord.js"
-import type { ErrorWithSource } from "../utils/errorHandler"
+import type { ErrorWithSource } from "../utils/errorHandler.js"
 
 declare module "rss-parser" {
   interface Item {

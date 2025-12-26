@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js"
-import getPvm from "../lib/reddit"
+import getPvm from "../lib/reddit.js"
 import type { CommandInteraction } from "discord.js"
 
 export const command = {

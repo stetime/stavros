@@ -1,9 +1,17 @@
-FROM oven/bun:alpine
+FROM node:25-alpine AS builder
 WORKDIR /app
-COPY package.json bun.lock ./
-ENV NODE_ENV='production'
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:25-alpine
+WORKDIR /app
+ENV NODE_ENV=production
 RUN apk --no-cache add git
-RUN bun install --frozen-lockfile --production
-COPY --chown=bun:bun . .
-USER bun
-CMD ["bun", "run", "src/index.ts"]
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+RUN mkdir -p /app/data && chown -R node:node /app
+USER node
+CMD ["node", "dist/index.js"]
