@@ -9,6 +9,6 @@ export const command = {
   async execute(interaction: CommandInteraction) {
     await interaction.deferReply()
     const pvm = await getPvm()
-    await interaction.editReply(pvm)
+    pvm && (await interaction.editReply(pvm))
   },
 }
