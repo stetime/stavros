@@ -1,7 +1,6 @@
 import logger from "../utils/logger.js"
-import { SlashCommandBuilder } from "discord.js"
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js"
 import { inputSingleFeed, sourceList } from "../lib/rss.js"
-import type { CommandInteraction } from "discord.js"
 
 function isValidUrl(url: string) {
   try {
@@ -22,7 +21,7 @@ export const command = {
         .setDescription("the url of the feed to add")
         .setRequired(true)
     ),
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply()
     const input = interaction.options.get("input")?.value as string
     if (!isValidUrl(input)) {

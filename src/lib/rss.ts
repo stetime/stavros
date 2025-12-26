@@ -120,7 +120,7 @@ class Feed {
     const image =
       this.image || post.media?.["media:thumbnail"]?.[0]?.["$"].url || undefined
     image && embed.setThumbnail(image)
-    await channel.send({ embeds: [embed] })
+    "send" in channel && (await channel.send({ embeds: [embed] }))
   }
 }
 
