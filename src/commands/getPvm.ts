@@ -9,6 +9,12 @@ export const command = {
   async execute(interaction: CommandInteraction) {
     await interaction.deferReply()
     const pvm = await getPvm()
-    pvm && (await interaction.editReply(pvm))
+    if (!pvm) {
+      await interaction.editReply({
+        content: "Couldn't get a PVM right now",
+      })
+      return
+    }
+    await interaction.editReply(pvm)
   },
 }
