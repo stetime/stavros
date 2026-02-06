@@ -10,7 +10,8 @@ export const command = {
     .setName("purge")
     .setDescription("unsubscribe from rss feed"),
   async execute(interaction: CommandInteraction) {
-    const { sourceList } = await import("../lib/rss")
+    await interaction.deferReply({ flags: "Ephemeral" })
+    const { sourceList } = await import("../lib/rss.js")
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("select")
@@ -24,10 +25,10 @@ export const command = {
               description: source.url,
               value: source.id,
             }
-          })
-        )
+          }),
+        ),
     )
-    await interaction.reply({
+    await interaction.editReply({
       content: "Select a feed to purge:",
       components: [row],
     })
