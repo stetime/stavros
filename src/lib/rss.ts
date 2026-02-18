@@ -130,7 +130,6 @@ class FeedManager {
     const raw = db.getFeeds()
     logger.info(`raw feeds: ${raw.length}`)
     this.feeds = db.getFeeds().map((source) => {
-      logger.info("inside map")
       const { id, title, url, latest_post_date, latest_post_guid, image } =
         source
       const latestPost =
@@ -142,11 +141,9 @@ class FeedManager {
           : undefined
       return new Feed(id!, title, url, latestPost, image)
     })
-    logger.info(`init complete, ${this.feeds.length} feeds loaded`)
   }
 
   get() {
-    logger.info(`get() called, feeds: ${this.feeds.length}`)
     return this.feeds
   }
 
@@ -175,15 +172,12 @@ class FeedManager {
   }
 
   async purge(id: string) {
-    logger.debug("calling purgefeed")
     const match = this.feeds.findIndex((feed) => feed.id === id)
     if (match === -1) {
       logger.debug(`no match`)
       return
     }
-    logger.debug(`got a match: ${match}`)
     const removed = this.feeds.splice(match, 1)[0]!
-    logger.debug("calling purgefeed")
     db.purgeFeed(id)
     logger.info(`${removed.title} purged from the database and source list`)
     return true
