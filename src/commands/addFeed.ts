@@ -1,6 +1,6 @@
 import logger from "../utils/logger.js"
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js"
-import { inputSingleFeed, sourceList } from "../lib/rss.js"
+import { feedManager } from "../lib/rss.js"
 
 function isValidUrl(url: string) {
   try {
@@ -19,7 +19,7 @@ export const command = {
       option
         .setName("input")
         .setDescription("the url of the feed to add")
-        .setRequired(true)
+        .setRequired(true),
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply()
@@ -29,20 +29,21 @@ export const command = {
         content: "That is not a valid URL",
       })
     }
+    const sourceList = feedManager.get()
     const dupe = sourceList.find((feed) => feed.url === input)
     if (dupe) {
       logger.debug(
-        `attempt to add dupe feed: ${input} by ${interaction.user.username}`
+        `attempt to add dupe feed: ${input} by ${interaction.user.username}`,
       )
       await interaction.editReply({
         content: `already subscribed to ${dupe.title}`,
       })
     } else {
-      const newFeed = await inputSingleFeed(input)
+      const newFeed = await feedManager.add(input)
       if (newFeed) {
         sourceList.push(newFeed)
         logger.info(
-          `${newFeed.title} - has been added to the db and sourcelist by ${interaction.user.username}`
+          `${newFeed.title} - has been added to the db and sourcelist by ${interaction.user.username}`,
         )
         logger.debug(JSON.stringify(sourceList, null, 2))
         await interaction.editReply({
