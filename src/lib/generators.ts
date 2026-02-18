@@ -13,7 +13,7 @@ class Game {
   async generator() {
     const game = db.getGame()
     if (!game) {
-      return
+      return this.name
     }
     this.name = game
     return this.name
@@ -46,12 +46,12 @@ async function nickgen(client: Client) {
     nick.generator()
     while (nick.name.length > 32) {
       logger.warn(
-        `generated nick ${nick.name} is over the discord character limit`
+        `generated nick ${nick.name} is over the discord character limit`,
       )
       const channel = client.channels.cache.get(process.env.channelId as string)
       if (channel && "send" in channel) {
         channel.send(
-          `tried to change nick to ${nick.name}... but it's over the discord limit...`
+          `tried to change nick to ${nick.name}... but it's over the discord limit...`,
         )
       }
       nick.generator()
