@@ -2,7 +2,7 @@ import logger from "./utils/logger.js"
 import handleError from "./utils/errorHandler.js"
 import { Client, GatewayIntentBits, Collection, Events } from "discord.js"
 import { db } from "./lib/db.js"
-import { initFeeds, checkFeeds, purgeFeed } from "./lib/rss.js"
+import { feedManager } from "./lib/rss.js"
 import { gamegen, nickgen } from "./lib/generators.js"
 import { readdirSync } from "fs"
 import { fileURLToPath } from "url"
@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const commandsPath = join(__dirname, "commands")
 const commandFiles = readdirSync(commandsPath).filter(
-  (file) => file.endsWith(".js") || file.endsWith(".ts")
+  (file) => file.endsWith(".js") || file.endsWith(".ts"),
 )
 for (const file of commandFiles) {
   const { command } = await import(`./commands/${file}`)
@@ -40,12 +40,14 @@ for (const file of commandFiles) {
 
 client.on(Events.ClientReady, async () => {
   db.init()
-  initFeeds()
+  feedManager.init()
   logger.info("connected to discord")
   setInterval(
-    checkFeeds,
+    () => feedManager.check(client),
     parseInt(process.env.CHECK_INTERVAL as string) || 60000,
-    client
+  )
+  logger.debug(
+    `source list currently: ${JSON.stringify(feedManager.get(), null, 2)}`,
   )
   gamegen(client)
   nickgen(client)
@@ -81,7 +83,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu())
     return
   if (interaction.isStringSelectMenu() && interaction.values[0]) {
-    if (await purgeFeed(interaction.values[0])) {
+    if (await feedManager.purge(interaction.values[0])) {
       await interaction.update({
         content: "successfully deleted",
         components: [],

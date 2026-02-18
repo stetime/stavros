@@ -4,6 +4,7 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js"
 import type { CommandInteraction } from "discord.js"
+import { feedManager } from "../lib/rss"
 
 export const command = {
   data: new SlashCommandBuilder()
@@ -11,7 +12,7 @@ export const command = {
     .setDescription("unsubscribe from rss feed"),
   async execute(interaction: CommandInteraction) {
     await interaction.deferReply({ flags: "Ephemeral" })
-    const { sourceList } = await import("../lib/rss.js")
+    const sourceList = feedManager.get()
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("select")
