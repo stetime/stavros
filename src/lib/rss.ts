@@ -4,12 +4,7 @@ import logger from "../utils/logger.js"
 import handleError from "../utils/errorHandler.js"
 import { EmbedBuilder } from "@discordjs/builders"
 import { getYoutubeRSS, checkYoutubeURL } from "./youtube.js"
-import {
-  calculateUserDefaultAvatarIndex,
-  type Client,
-  type TextBasedChannel,
-} from "discord.js"
-import type { ErrorWithSource } from "../utils/errorHandler.js"
+import { type Client, type TextBasedChannel } from "discord.js"
 
 declare module "rss-parser" {
   interface Item {
@@ -180,7 +175,7 @@ class FeedManager {
   }
 
   async purge(id: string) {
-    logger.debug('calling purgefeed')
+    logger.debug("calling purgefeed")
     const match = this.feeds.findIndex((feed) => feed.id === id)
     if (match === -1) {
       logger.debug(`no match`)
@@ -251,95 +246,4 @@ function updateByGuid(
   return idx !== -1 ? remoteFeed.items.slice(0, idx) : null
 }
 
-async function inputSingleFeed(url: string) {
-  if (url.includes("youtube") && checkYoutubeURL(url)) {
-    const youtubeURL = await getYoutubeRSS(url)
-    if (!youtubeURL) {
-      return false
-    }
-    url = youtubeURL
-  }
-  const feed = await parser.parseURL(url)
-  if (feed.title) {
-    if (db.getFeed(url)) {
-      return false
-    }
-    const image = feed.image?.url || feed.itunes?.image || null
-    db.addFeed(url, feed.title, image)
-    const dbFeed = db.getFeed(url)
-    if (dbFeed) {
-      return new Feed(
-        dbFeed.id!,
-        dbFeed.title,
-        dbFeed.url,
-        undefined,
-        dbFeed.image,
-      )
-    }
-  } else {
-    return false
-  }
-}
-
-async function purgeFeed(id: string) {
-  const match = sourceList.find((feed) => feed.id === id)
-  if (match) {
-    db.purgeFeed(id)
-    const index = sourceList.findIndex((feed) => feed.id === id)
-    sourceList.splice(index, 1)
-    logger.info(`${match.title} purged from the database and source list`)
-    logger.debug(`current source list:\n${JSON.stringify(sourceList, null, 2)}`)
-    return true
-  }
-  return
-}
-
-function initFeeds() {
-  const sources = db.getFeeds()
-  sources.forEach((source) => {
-    logger.debug(JSON.stringify(source, null, 2))
-    const { id, title, url, latest_post_date, latest_post_guid, image } = source
-    const latestPost =
-      latest_post_date || latest_post_guid
-        ? {
-            pubDate: latest_post_date ?? undefined,
-            guid: latest_post_guid ?? undefined,
-          }
-        : undefined
-    const feed = new Feed(id!, title, url, latestPost, image)
-    sourceList.push(feed)
-  })
-  logger.debug(JSON.stringify(sourceList, null, 2))
-}
-
-async function checkFeeds(client: Client) {
-  const startTime = Date.now()
-  const channel = client.channels.cache.get(process.env.channelId as string)
-  for (const source of sourceList) {
-    try {
-      const update = await source.update()
-      if (update && channel && "send" in channel) {
-        for (const post of update) {
-          if (post) {
-            await source.broadcast(post, channel as TextBasedChannel)
-          }
-        }
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        const errorWithSource: ErrorWithSource = Object.assign(error, {
-          source: source.title,
-        })
-        handleError(errorWithSource, client)
-      }
-    }
-  }
-  const duration = Date.now() - startTime
-  logger.info(`rss check completed in ${duration} ms`)
-  if (duration > 30000) {
-    logger.warn(`rss check took an unusually long time: ${duration} ms`)
-  }
-}
-
-export { sourceList, inputSingleFeed, purgeFeed, initFeeds, checkFeeds }
 export const feedManager = new FeedManager()
