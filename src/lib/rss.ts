@@ -33,8 +33,6 @@ const parser = new Parser({
   },
 })
 
-const sourceList: Feed[] = []
-
 class Feed {
   id: string
   title: string
