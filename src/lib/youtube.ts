@@ -28,9 +28,18 @@ async function getYoutubeRSS(url: string): Promise<string | null> {
 
 function checkYoutubeURL(url: string) {
   const youtubeRssPattern =
-    /https?:\/\/(?:www\.)?youtube\.com\/feeds\/videos\.xml\?.*/
-  const youtubePattern = /youtube/i
-  return youtubePattern.test(url) && !youtubeRssPattern.test(url)
+    /https?:\/\/(?:www\.)?youtube\.com\/feeds\/videos\.xml\?.*/;
+  try {
+    const parsed = new URL(url)
+    const hostname = parsed.hostname
+    const isYoutube =
+      hostname === "youtu.be" ||
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com")
+    return isYoutube && !youtubeRssPattern.test(url)
+  } catch {
+    return false
+  }
 }
 
 export { getYoutubeRSS, checkYoutubeURL }
