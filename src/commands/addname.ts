@@ -12,18 +12,17 @@ export const command = {
         .setRequired(true)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
+    await interaction.deferReply({ flags: "Ephemeral" })
     const input = interaction.options.get("input")?.value as string
     if (await db.findName(input)) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `${input} is already in the db`,
-        ephemeral: true,
       })
       return
     }
     db.addName(input)
-    await interaction.reply({
+    await interaction.editReply({
       content: `${input} added to the db`,
-      ephemeral: true,
     })
   },
 }

@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js"
 import { db } from "../lib/db.js"
+import logger from "../utils/logger.js"
 
 export const command = {
   data: new SlashCommandBuilder()
@@ -12,18 +13,18 @@ export const command = {
         .setRequired(true)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    const input = interaction.options.get("string")?.value as string
+    await interaction.deferReply({ flags: "Ephemeral" })
+    const input = interaction.options.get("input")?.value as string
+    logger.debug(input)
     if (db.findPrefix(input)) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `${input} is already in the db`,
-        ephemeral: true,
       })
       return
     }
     db.addPrefix(input)
-    await interaction.reply({
+    await interaction.editReply({
       content: `${input} added to the db`,
-      ephemeral: true,
     })
   },
 }
